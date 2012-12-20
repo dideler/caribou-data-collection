@@ -1,2 +1,3 @@
-#### Dependencies
-- [Selenium Python Client Driver](http://selenium.googlecode.com/svn/trunk/docs/api/py/index.html)
+Scripts to collect contact information from schools in BC.
+
+Using the website: http://www.bced.gov.bc.ca/apps/imcl/imclWeb/Home.do
