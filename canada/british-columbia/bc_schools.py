@@ -27,7 +27,10 @@ def set_logger(loglevel):
     numlevel = getattr(logging, loglevel.upper(), None)
     if not isinstance(numlevel, int):  # Should never happen due to argparse.
         raise ValueError('Invalid log level: ', loglevel)
-    logging.basicConfig(filename = 'bc_schools.log', level = numlevel)
+    logging.basicConfig(format = '%(asctime)s %(levelname)s: %(message)s',
+            datefmt = '%I:%M:%S',  # Add %p for AM or PM.
+            filename = 'bc_schools.log',
+            level = numlevel)  # Add filemode='w' if you do not want to append.
 
 def parse_args():
     parser = argparse.ArgumentParser(
