@@ -19,17 +19,15 @@ Examples:
 """
 
 
-def set_logger(lvl = None):
+def set_logger(loglevel):
     """Sets up logging to a file.
     
     Logging output is appended to the file if it already exists.
     """
-    #lvl = getattr()
-    # TODO: convert argument to a log level, see example
-    if lvl is None:
-        logging.basicConfig(filename = 'bc_schools.log', level = logging.INFO)
-    else:
-        logging.basicConfig(filename = 'bc_schools.log', level = lvl)
+    numlevel = getattr(logging, loglevel.upper(), None)
+    if not isinstance(numlevel, int):  # Should never happen due to argparse.
+        raise ValueError('Invalid log level: ', loglevel)
+    logging.basicConfig(filename = 'bc_schools.log', level = numlevel)
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -42,12 +40,11 @@ def parse_args():
     parser.add_argument('-v, --version', action = 'version',
             version = '%(prog)s 1.0')
     args = parser.parse_args()
-    print args
-    print args.loglevel
+    return args
 
 def main():
-    parse_args()
-    set_logger(logging.DEBUG) # TODO: Remove argument when ready for production.
+    args = parse_args()
+    set_logger(args.loglevel)
     logging.info('Started on %s', strftime("%A, %d %B %Y at %I:%M%p"))
     logging.debug('debug')
     logging.info('info')
