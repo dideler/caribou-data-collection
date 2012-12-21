@@ -7,6 +7,8 @@ import logging
 from sys import argv
 from time import strftime
 
+from selenium import webdriver
+
 """Collects contact info from all schools in British Columbia.
 
 Examples:
@@ -18,6 +20,13 @@ Examples:
 
 """
 
+def extract(url):
+    """Extracts the information of all BC schools.
+
+    TODO: might have to split this up into multiple functions...
+    """
+    browser = webdriver.Chrome()
+    browser.get(url)
 
 def set_logger(loglevel):
     """Sets up logging to a file.
@@ -30,7 +39,7 @@ def set_logger(loglevel):
     logging.basicConfig(format = '%(asctime)s %(levelname)s: %(message)s',
             datefmt = '%I:%M:%S',  # Add %p for AM or PM.
             filename = 'bc_schools.log',
-            level = numlevel)  # Add filemode='w' if you do not want to append.
+            level = numlevel)  # Add filemode='w' to overwrite old log file.
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -49,9 +58,7 @@ def main():
     args = parse_args()
     set_logger(args.loglevel)
     logging.info('Started on %s', strftime("%A, %d %B %Y at %I:%M%p"))
-    logging.debug('debug')
-    logging.info('info')
-    logging.warning('warning')
+    extract('http://www.bced.gov.bc.ca/apps/imcl/imclWeb/Home.do')
 
 if __name__ == '__main__':
     main()
