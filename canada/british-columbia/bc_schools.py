@@ -76,15 +76,21 @@ class Crawler(object):
             logging.critical('citySelect element is not a SELECT tag.')
         except StaleElementReferenceException:
             logging.critical('citySelect element does not exist.')
-        cities = [option.text.strip() for option in city_list.options]
+        # Currently it makes no difference using the option's text or value,
+        # but it's safer to use the value as it's used for the query.
+        # To use the option's text, return option.text.strip() in the loop.
+        cities = [option.get_attribute('value') for option in city_list.options]
         num_cities = len(cities)
         logging.info("Found %d cities", num_cities-1) # First option is not a city.
+
+        # Dynamically create the city URLs and crawl each city.
         for i, city in enumerate(cities):
-            if i == 0: continue  # First city option is "City", skip it.
+            if i == 0: continue # First city option is "City", skip it.
             city_query = '?city={}'.format(pathname2url(city))
             city_url = self.home_url + city_query
             self._browser.get(city_url)
             logging.info("Crawling city %d: %s", i, city)
+            #self.__crawl_schools_in_city()
         ''' The above method of iterating through cities is much quicker than:
         for i in xrange(1, num_cities):
             while True: # This is a dirty hack since Selenium's wait methods aren't working.
@@ -99,7 +105,6 @@ class Crawler(object):
                     # By the time it retries, the element should have loaded.
                     continue
                 break
-            crawl_schools_in_city(browser)
         '''
 
     def __crawl_schools_in_city(self):
@@ -111,9 +116,18 @@ class Crawler(object):
             logging.critical('citySchoolSelect element does not exist.')
         schools = [option.text.strip() for option in school_list.options]
         num_schools = len(schools)
-        logging.info("Found %d schools", num_shools-1) # First option is not a school.
+        logging.info("Found %d schools", num_schools-1) # First option is not a school.
 
-        # school_list.options[1].get_attribute('value')
+        # Dynamically create the school URLs and crawl the schools in the city.
+        # This strategy is _much_ quicker than clicking every school option
+        # in the dropdown list, loop-waiting until the page loads, going back
+        # to the previous page using the page history, and repeating.
+        for i, school in enumerate(schools):
+            if i == 0: continue # First school option is "School Name", skip it.
+            school_query = school.get_attribute('value')
+            school_url = self.base_url + school_query
+            self._browser.get(school_url)
+            logging.info("Crawling school %d: %s", i, school)
 
 
 def set_logger(loglevel):
