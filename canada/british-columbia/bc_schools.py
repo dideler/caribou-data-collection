@@ -79,11 +79,12 @@ class Crawler(object):
         cities = [option.text.strip() for option in city_list.options]
         num_cities = len(cities)
         logging.info("Found %d cities", num_cities-1) # First option is not a city.
-        for city in cities:
+        for i, city in enumerate(cities):
+            if i == 0: continue  # First city option is "City", skip it.
             city_query = '?city={}'.format(pathname2url(city))
             city_url = self.home_url + city_query
             self._browser.get(city_url)
-            logging.info("Crawling city: %s", city)
+            logging.info("Crawling city %d: %s", i, city)
         ''' The above method of iterating through cities is much quicker than:
         for i in xrange(1, num_cities):
             while True: # This is a dirty hack since Selenium's wait methods aren't working.
@@ -111,6 +112,8 @@ class Crawler(object):
         schools = [option.text.strip() for option in school_list.options]
         num_schools = len(schools)
         logging.info("Found %d schools", num_shools-1) # First option is not a school.
+
+        # school_list.options[1].get_attribute('value')
 
 
 def set_logger(loglevel):
