@@ -88,9 +88,9 @@ class Crawler(object):
             if i == 0: continue # First city option is "City", skip it.
             city_query = '?city={}'.format(pathname2url(city))
             city_url = self.home_url + city_query
-            self._browser.get(city_url)
             logging.info("Crawling city %d: %s", i, city)
-            #self.__crawl_schools_in_city()
+            self._browser.get(city_url)
+            self.__crawl_schools_in_city()
         ''' The above method of iterating through cities is much quicker than:
         for i in xrange(1, num_cities):
             while True: # This is a dirty hack since Selenium's wait methods aren't working.
@@ -114,7 +114,10 @@ class Crawler(object):
             logging.critical('citySchoolSelect element is not a SELECT tag.')
         except StaleElementReferenceException:
             logging.critical('citySchoolSelect element does not exist.')
-        schools = [option.text.strip() for option in school_list.options]
+        # Create a list of tuples for each school -> (school name, school value)
+        # This allows for crawling without using the school_list element
+        # (which ceases to exist in memory when the page changes).
+        schools = [(option.text.strip(), option.get_attribute('value')) for option in school_list.options]
         num_schools = len(schools)
         logging.info("Found %d schools", num_schools-1) # First option is not a school.
 
@@ -124,10 +127,9 @@ class Crawler(object):
         # to the previous page using the page history, and repeating.
         for i, school in enumerate(schools):
             if i == 0: continue # First school option is "School Name", skip it.
-            school_query = school.get_attribute('value')
-            school_url = self.base_url + school_query
+            school_url = self.base_url + school[1]
+            logging.info("Crawling school %d: %s", i, school[0])
             self._browser.get(school_url)
-            logging.info("Crawling school %d: %s", i, school)
 
 
 def set_logger(loglevel):
