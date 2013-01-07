@@ -53,12 +53,14 @@ class Crawler(object):
     Attributes:
     - base_url: The URL of the website that contains the school directories.
     - home_url: The homepage of the website.
+    - seconds: The maximum amount of seconds to wait between page requests.
     """
 
-    def __init__(self, url):
+    def __init__(self, url, secs):
         """Inits Crawler with the proper URLs and an empty browser driver."""
         self.base_url = url
         self.home_url = url + 'Home.do'
+        self.seconds = secs
         self._browser = None
 
     def crawl(self):
@@ -194,8 +196,8 @@ def parse_args():
     parser.add_argument('--log', default = 'info', dest = 'loglevel',
             help = 'Log level (default: %(default)s)',
             choices = ['debug', 'info', 'warning', 'error', 'critical'])
-    parser.add_argument('--max-pause', type = int, default = '0', dest = 'pausetime',
-            help = 'Maximum possible time for pausing between HTTP requests (default: %(default)s)')
+    parser.add_argument('--max-pause', type = int, default = '0', dest = 'seconds',
+            help = 'Maximum amount of seconds to pause between page requests (default: %(default)s sec)')
     parser.add_argument('-v, --version', action = 'version',
             version = '%(prog)s 1.0')
     args = parser.parse_args()
@@ -205,7 +207,7 @@ def main():
     args = parse_args()
     set_logger(args.loglevel)
     logging.info('Started on %s', strftime("%A, %d %B %Y at %I:%M%p"))
-    crawler = Crawler('http://www.bced.gov.bc.ca/apps/imcl/imclWeb/')
+    crawler = Crawler('http://www.bced.gov.bc.ca/apps/imcl/imclWeb/', args.seconds)
     crawler.crawl()
 
 if __name__ == '__main__':
