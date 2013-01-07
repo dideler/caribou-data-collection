@@ -46,8 +46,15 @@ Examples:
     #               country (will be 'CA')
 
 class Crawler(object):
+    """A crawler that collects contact info of all K12 schools in BC, Canada.
+
+    Attributes:
+    - base_url: The URL of the website that contains the school directories.
+    - home_url: The homepage of the website.
+    """
 
     def __init__(self, url):
+        """Inits Crawler with the proper URLs and an empty browser driver."""
         self.base_url = url
         self.home_url = url + 'Home.do'
         self._browser = None
@@ -130,6 +137,37 @@ class Crawler(object):
             school_url = self.base_url + school[1]
             logging.info("Crawling school %d: %s", i, school[0])
             self._browser.get(school_url)
+
+    def __extract_contact_info(self):
+        """TODO:
+        school (primary key, not null, auto increment?): table id, do we have to provide it?
+        name (not null): pass in from crawl_schools_in_city()
+        address (not null): extract from table data -- will be a PO box!
+        city (not null): pass in from crawl_cities() OR extract from table data
+        province (not null): 'BC' OR can be extracted from table data
+        postal_code (not null): extract from table data
+        schoolboard (default null): ???
+        contact (default null): extract from table data (if available)
+        position (default null): extract from table data (if available)
+        email (default null):  extract from table data (if available)
+        timezone (default null): "America/Vancouver"
+        country (default CA): "CA" OR can be left empty (because CA is default)
+
+        TIPS:
+        - strip all text
+        - left_col_data = b.find_element_by_xpath('/html/body/div/table[3]/tbody/tr[1]/td[4]/table[2]/tbody/tr/td[1]').text.split('\n')
+          that gets you the dirty data in a list, still need to clean it up
+          - address
+          - contact (name and position)
+          - type of school
+        - xpath for right_col_data '/html/body/div/table[3]/tbody/tr[1]/td[4]/table[2]/tbody/tr/td[3]'
+          - phone
+          - fax
+          - email
+        - many addresses are PO box addresses
+        - contact field will either be "Contact" or "Principal"
+        """
+
 
 
 def set_logger(loglevel):
