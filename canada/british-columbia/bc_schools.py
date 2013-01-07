@@ -20,13 +20,18 @@ from selenium.common.exceptions import UnexpectedTagNameException
 
 """Collects contact info from all schools in British Columbia.
 
+There is an option to specify a maximum time (in seconds) to wait between page
+requests. This option is useful for randomizing the crawling patterns, which
+makes it less obvious that the crawling is performed by a bot. It also reduces
+the load on the server(s) by spreading out the requests over a longer period.
+
 Examples:
     python bc_schools.py
     python bc_schools.py --help  # Displays the help.
     python bc_schools.py --version  # Displays the program version.
     python bc_schools.py --log=info  # Sets the log level to INFO.
     python bc_schools.py --log info  # Another way to set the log level.
-    python bc_schools.py --max-pause 5  # Wait up to 5 seconds between schools.
+    python bc_schools.py --max-pause 5  # Wait up to 5 seconds between requests.
 
 """
     # find city-list element - x
@@ -69,12 +74,11 @@ class Crawler(object):
         self._browser.get(self.home_url)
         assert 'School and District Contacts' in self._browser.title, 'Wrong webpage.'
         
-        # NOTE: The page reloads on every option click. Therefore the element will
-        #       no longer exist in cache and Selenium will complain.
-        #       A workaround is to re-find the element after every option click.
+        # NOTE: The page reloads on every option click. Thus the element will
+        #       no longer exist in cache and Selenium will complain and crash.
+        #       A workaround is to re-find the element after every page reload.
 
         self.__crawl_cities()
-        #browser.back()
         self._browser.close()
 
     def __crawl_cities(self):
@@ -100,6 +104,7 @@ class Crawler(object):
             city_query = '?city={}'.format(pathname2url(city))
             city_url = self.home_url + city_query
             logging.info("Crawling city %d: %s", i, city)
+            sleep(randint(0, self.seconds)) # Randomly pause between requests.
             self._browser.get(city_url)
             self.__crawl_schools_in_city()
         ''' The above method of iterating through cities is much quicker than:
@@ -140,6 +145,7 @@ class Crawler(object):
             if i == 0: continue # First school option is "School Name", skip it.
             school_url = self.base_url + school[1]
             logging.info("Crawling school %d: %s", i, school[0])
+            sleep(randint(0, self.seconds)) # Randomly pause between requests.
             self._browser.get(school_url)
 
     def __extract_contact_info(self):
