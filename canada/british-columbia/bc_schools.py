@@ -8,7 +8,8 @@ import argparse
 import logging
 from sys import argv
 from time import strftime
-#from time import sleep  # TODO: use to randomize crawling pattern and to cut the server some slack
+from time import sleep  # Used to randomize crawling pattern and to cut the server some slack.
+from random import randint
 from urllib import pathname2url
 
 from selenium import webdriver
@@ -25,6 +26,7 @@ Examples:
     python bc_schools.py --version  # Displays the program version.
     python bc_schools.py --log=info  # Sets the log level to INFO.
     python bc_schools.py --log info  # Another way to set the log level.
+    python bc_schools.py --max-pause 5  # Wait up to 5 seconds between schools.
 
 """
     # find city-list element - x
@@ -181,7 +183,7 @@ def set_logger(loglevel):
     logging.basicConfig(format = '%(asctime)s %(levelname)s: %(message)s',
             datefmt = '%I:%M:%S',  # Add %p for AM or PM.
             filename = 'bc_schools.log',
-            filemode = 'w',  # Overwrite file if exists -- remove to append.
+            filemode = 'w',  # Overwrite file if exists -- default is append.
             level = numlevel)
 
 def parse_args():
@@ -192,6 +194,8 @@ def parse_args():
     parser.add_argument('--log', default = 'info', dest = 'loglevel',
             help = 'Log level (default: %(default)s)',
             choices = ['debug', 'info', 'warning', 'error', 'critical'])
+    parser.add_argument('--max-pause', type = int, default = '0', dest = 'pausetime',
+            help = 'Maximum possible time for pausing between HTTP requests (default: %(default)s)')
     parser.add_argument('-v, --version', action = 'version',
             version = '%(prog)s 1.0')
     args = parser.parse_args()
