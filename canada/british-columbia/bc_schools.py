@@ -34,23 +34,6 @@ Examples:
     python bc_schools.py --max-pause 5  # Wait up to 5 seconds between requests.
 
 """
-    # find city-list element - x
-    # for each city - x
-    #   click city - x
-    #   find school-list element
-    #   for each school
-    #       click school
-    #       extract school name
-    #               address
-    #               city
-    #               province (will be 'BC')
-    #               postal code
-    #               school board
-    #               contact name
-    #               contact position (e.g. teacher or principal)
-    #               email
-    #               timezone (will be 'America/Vancouver')
-    #               country (will be 'CA')
 
 class Crawler(object):
     """A crawler that collects contact info of all K12 schools in BC, Canada.
@@ -164,6 +147,7 @@ class Crawler(object):
         country (default CA): "CA" OR can be left empty (because CA is default)
 
         TIPS:
+        - skip schools with no email address
         - strip all text
         - left_col_data = b.find_element_by_xpath('/html/body/div/table[3]/tbody/tr[1]/td[4]/table[2]/tbody/tr/td[1]').text.split('\n')
           that gets you the dirty data in a list, still need to clean it up
