@@ -181,7 +181,8 @@ def set_logger(loglevel):
     logging.basicConfig(format = '%(asctime)s %(levelname)s: %(message)s',
             datefmt = '%I:%M:%S',  # Add %p for AM or PM.
             filename = 'bc_schools.log',
-            level = numlevel)  # Add filemode='w' to overwrite old log file.
+            filemode = 'w',  # Overwrite file if exists -- remove to append.
+            level = numlevel)
 
 def parse_args():
     parser = argparse.ArgumentParser(
