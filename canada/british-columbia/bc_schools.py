@@ -196,7 +196,7 @@ def parse_args():
     parser.add_argument('--log', default = 'info', dest = 'loglevel',
             help = 'Log level (default: %(default)s)',
             choices = ['debug', 'info', 'warning', 'error', 'critical'])
-    parser.add_argument('--max-pause', type = int, default = '0', dest = 'seconds',
+    parser.add_argument('--max-pause', type = int, default = 0, dest = 'seconds',
             help = 'Maximum amount of seconds to pause between page requests (default: %(default)s sec)')
     parser.add_argument('-v, --version', action = 'version',
             version = '%(prog)s 1.0')
@@ -207,6 +207,8 @@ def main():
     args = parse_args()
     set_logger(args.loglevel)
     logging.info('Started on %s', strftime("%A, %d %B %Y at %I:%M%p"))
+    logging.info('Log level = %s, Max seconds to pause = %d', args.loglevel,
+                 args.seconds)
     crawler = Crawler('http://www.bced.gov.bc.ca/apps/imcl/imclWeb/', args.seconds)
     crawler.crawl()
 
