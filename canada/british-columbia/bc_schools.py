@@ -138,35 +138,15 @@ class Crawler(object):
             self.__extract_contact_info(school_name, city)
 
     def __extract_contact_info(self, schoolname, cityname):
-        """TODO:
-        school (primary key, not null, auto increment?): table id, do we have to provide it? - done
-        name (not null): pass in from crawl_schools_in_city() - done
-        address (not null): extract from table data -- will be a PO box! - todo
-        city (not null): pass in from crawl_cities() OR extract from table data - done
-        province (not null): 'BC' OR can be extracted from table data - done
-        postal_code (not null): extract from table data - todo
-        schoolboard (default null): set null - done
-        contact (default null): extract from table data (if available) - todo
-        position (default null): extract from table data (if available) - todo
-        email (default null):  extract from table data (if available) - todo
-        timezone (default null): "America/Vancouver" - done
-        country (default CA): - done
+        """Extract contact info for schools with an email address available.
 
-        TIPS:
-        - skip schools with no email address
-        - strip all text
-        - left_col_data = b.find_element_by_xpath('/html/body/div/table[3]/tbody/tr[1]/td[4]/table[2]/tbody/tr/td[1]').text.split('\n')
-          that gets you the dirty data in a list, still need to clean it up
-          - address
-          - contact (name and position)
-          - type of school
-        - xpath for right_col_data '/html/body/div/table[3]/tbody/tr[1]/td[4]/table[2]/tbody/tr/td[3]'
-          - phone
-          - fax
-          - email
-        - many addresses are PO box addresses
-        - contact field will either be "Contact" or "Principal"
-        - some long email addresses contain a new line, perhaps look in source for mailto?
+        - If a school has no email address, it is skipped.
+        - The contact info is written to a file in comma-separated-values.
+        - Though it's probably not needed, all data has its whitespace stripped.
+        - Many addresses are actually PO box addresses.
+        - Contact field is either "Contact" or "Principal".
+
+        IMPORTANT: Make sure the CSV data matches up with the schools db table.
         """
         school = 'null'
         name = schoolname
@@ -181,7 +161,6 @@ class Crawler(object):
         timezone = 'America/Vancouver'
         country = 'CA'
 
-        # TODO: put static stuff into the class as data members
         # The contact information is stored in two table columns. Inside each
         # column, information is separated by newlines. Long email addresses can
         # contain a newline, so if we separate all contact data by newlines, we
@@ -189,18 +168,52 @@ class Crawler(object):
         # we look at the mailto link for the full email address.
         email = self._browser.find_element_by_xpath(self._email_xpath).get_attribute('href')[7:]
         if email:
-            print email
-            leftdata = self._browser.find_element_by_xpath(self._leftcol_xpath).text.split('\n') # good -> length 8, field 1 empty
-            rightdata = self._browser.find_element_by_xpath(self._rightcol_xpath).text.split('\n') # good -> length 5, fields 1, 2 empty
-            #phone = rightdata[2]
-            #fax = rightdata[3]
-            # TODO: look out for schools with an email address but no phone number or fax
-            #       will have to enter null instead
-            for data in leftdata:
+            # A full left column has length 8. Index 0 is empty.
+            # A full right column has length 5. Indexes 0, 1 are empty.
+            left_col_data = self._browser.find_element_by_xpath(self._leftcol_xpath).text.split('\n')
+            right_col_data = self._browser.find_element_by_xpath(self._rightcol_xpath).text.split('\n')
+
+            try:
+                full_address = left_col_data[2].split(',')
+                address = full_address[0].strip()
+                postal_code = full_address[3].strip()  # Strip needed here.
+            except IndexError: address = postal_code = 'N/A'
+            try:
+                contact_person = left_col_data[3].split(' - ')
+                position = contact_person[0].strip()
+                contact = contact_person[1].strip()
+            except IndexError: position, contact = 'N/A', ''
+            try: phone = right_col_data[2].strip()
+            except IndexError: phone = 'null'
+            try: fax = right_col_data[3].strip()
+            except IndexError: fax = 'null'
+
+            # There is extra data that we are not extracting, for example:
+            #  school type, grades offered, private or public, enrolment date,
+            #  phone number, and fax number
+                
+            print ('school id = {}\n'
+                   'school name = {}\n'
+                   'address = {}\n'
+                   'city = {}\n'
+                   'province = {}\n'
+                   'postal code = {}\n'
+                   'schoolboard = {}\n'
+                   'contact name = {}\n'
+                   'contact position = {}\n'
+                   'contact email = {}\n'
+                   'timezone = {}\n'
+                   'country = {}').format(school, name, address, city, province,
+                                          postal_code, schoolboard, contact,
+                                          position, email, timezone, country)
+
+            '''
+            for data in left_col_data:
                 print data
-            for data in rightdata:
+            for data in right_col_data:
                 print data
-            print '-----------------------'
+            '''
+            print '--------------------'
         else:
             print 'no email found\n--------------------'
 
