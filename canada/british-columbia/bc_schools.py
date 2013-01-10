@@ -132,7 +132,7 @@ class Crawler(object):
             if i == 0: continue # First school option is "School Name", skip it.
             school_name, school_value = school[0], school[1]
             school_url = self.base_url + school_value
-            logging.info("Crawling school %d: %s", i, school_name)
+            logging.info("\tCrawling school %d: %s", i, school_name)
             sleep(randint(0, self.seconds)) # Randomly pause between requests.
             self._browser.get(school_url)
             self.__extract_contact_info(school_name, city)
