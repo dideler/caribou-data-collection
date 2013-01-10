@@ -50,6 +50,10 @@ class Crawler(object):
         self.home_url = url + 'Home.do'
         self.seconds = secs
         self._browser = None
+        self._tablerow_xpath = '/html/body/div/table[3]/tbody/tr[1]/td[4]/table[2]/tbody/tr'
+        self._leftcol_xpath = self._tablerow_xpath + '/td[1]'
+        self._rightcol_xpath = self._tablerow_xpath + '/td[3]'
+        self._email_xpath = self._rightcol_xpath + '/a'
 
     def crawl(self):
         """Crawls the website and extracts the information of all BC schools."""
@@ -89,7 +93,7 @@ class Crawler(object):
             logging.info("Crawling city %d: %s", i, city)
             sleep(randint(0, self.seconds)) # Randomly pause between requests.
             self._browser.get(city_url)
-            self.__crawl_schools_in_city()
+            self.__crawl_schools_in_city(city)
         ''' The above method of iterating through cities is much quicker than:
         for i in xrange(1, num_cities):
             while True: # This is a dirty hack since Selenium's wait methods aren't working.
@@ -106,7 +110,7 @@ class Crawler(object):
                 break
         '''
 
-    def __crawl_schools_in_city(self):
+    def __crawl_schools_in_city(self, city):
         try:
             school_list = Select(self._browser.find_element_by_id('citySchoolSelect'))
         except UnexpectedTagNameException:
@@ -126,25 +130,27 @@ class Crawler(object):
         # to the previous page using the page history, and repeating.
         for i, school in enumerate(schools):
             if i == 0: continue # First school option is "School Name", skip it.
-            school_url = self.base_url + school[1]
-            logging.info("Crawling school %d: %s", i, school[0])
+            school_name, school_value = school[0], school[1]
+            school_url = self.base_url + school_value
+            logging.info("Crawling school %d: %s", i, school_name)
             sleep(randint(0, self.seconds)) # Randomly pause between requests.
             self._browser.get(school_url)
+            self.__extract_contact_info(school_name, city)
 
-    def __extract_contact_info(self):
+    def __extract_contact_info(self, schoolname, cityname):
         """TODO:
-        school (primary key, not null, auto increment?): table id, do we have to provide it?
-        name (not null): pass in from crawl_schools_in_city()
-        address (not null): extract from table data -- will be a PO box!
-        city (not null): pass in from crawl_cities() OR extract from table data
-        province (not null): 'BC' OR can be extracted from table data
-        postal_code (not null): extract from table data
-        schoolboard (default null): ???
-        contact (default null): extract from table data (if available)
-        position (default null): extract from table data (if available)
-        email (default null):  extract from table data (if available)
-        timezone (default null): "America/Vancouver"
-        country (default CA): "CA" OR can be left empty (because CA is default)
+        school (primary key, not null, auto increment?): table id, do we have to provide it? - done
+        name (not null): pass in from crawl_schools_in_city() - done
+        address (not null): extract from table data -- will be a PO box! - todo
+        city (not null): pass in from crawl_cities() OR extract from table data - done
+        province (not null): 'BC' OR can be extracted from table data - done
+        postal_code (not null): extract from table data - todo
+        schoolboard (default null): set null - done
+        contact (default null): extract from table data (if available) - todo
+        position (default null): extract from table data (if available) - todo
+        email (default null):  extract from table data (if available) - todo
+        timezone (default null): "America/Vancouver" - done
+        country (default CA): - done
 
         TIPS:
         - skip schools with no email address
@@ -160,9 +166,43 @@ class Crawler(object):
           - email
         - many addresses are PO box addresses
         - contact field will either be "Contact" or "Principal"
+        - some long email addresses contain a new line, perhaps look in source for mailto?
         """
+        school = 'null'
+        name = schoolname
+        address = None
+        city = cityname
+        province = 'BC'
+        postal_code = None
+        schoolboard = 'null'
+        contact = None
+        position = None
+        email = None
+        timezone = 'America/Vancouver'
+        country = 'CA'
 
-
+        # TODO: put static stuff into the class as data members
+        # The contact information is stored in two table columns. Inside each
+        # column, information is separated by newlines. Long email addresses can
+        # contain a newline, so if we separate all contact data by newlines, we
+        # would misidentify some of the longer email addresses. To prevent this,
+        # we look at the mailto link for the full email address.
+        email = self._browser.find_element_by_xpath(self._email_xpath).get_attribute('href')[7:]
+        if email:
+            print email
+            leftdata = self._browser.find_element_by_xpath(self._leftcol_xpath).text.split('\n') # good -> length 8, field 1 empty
+            rightdata = self._browser.find_element_by_xpath(self._rightcol_xpath).text.split('\n') # good -> length 5, fields 1, 2 empty
+            #phone = rightdata[2]
+            #fax = rightdata[3]
+            # TODO: look out for schools with an email address but no phone number or fax
+            #       will have to enter null instead
+            for data in leftdata:
+                print data
+            for data in rightdata:
+                print data
+            print '-----------------------'
+        else:
+            print 'no email found\n--------------------'
 
 def set_logger(loglevel):
     """Sets up logging to a file.
