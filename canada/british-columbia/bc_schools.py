@@ -27,12 +27,12 @@ the load on the server(s) by spreading out the requests over a longer period.
 
 Examples:
     python bc_schools.py
-    python bc_schools.py --help  # Displays the help.
-    python bc_schools.py --version  # Displays the program version.
-    python bc_schools.py --log=info  # Sets the log level to INFO.
-    python bc_schools.py --log info  # Another way to set the log level.
-    python bc_schools.py --max-pause 5  # Wait up to 5 seconds between requests.
-
+    python bc_schools.py --help
+    python bc_schools.py --version
+    python bc_schools.py --log=info
+    python bc_schools.py --log info
+    python bc_schools.py --max-pause 5
+    python bc_schools.py --append
 """
 
 class Crawler(object):
@@ -42,13 +42,15 @@ class Crawler(object):
     - base_url: The URL of the website that contains the school directories.
     - home_url: The homepage of the website.
     - seconds: The maximum amount of seconds to wait between page requests.
+    - filemode: Write or append. Affects log file and data output file.
     """
 
-    def __init__(self, url, secs):
+    def __init__(self, url, secs, filemode):
         """Inits Crawler with the proper URLs and an empty browser driver."""
         self.base_url = url
         self.home_url = url + 'Home.do'
         self.seconds = secs
+        self.filemode = filemode
         self._browser = None
         self._tablerow_xpath = '/html/body/div/table[3]/tbody/tr[1]/td[4]/table[2]/tbody/tr'
         self._leftcol_xpath = self._tablerow_xpath + '/td[1]'
@@ -194,7 +196,7 @@ class Crawler(object):
             
             # TODO: add mode as variable, let user decide what to do.
             #       default will be write mode.
-            with open('bc-schools.csv', 'a') as csv_file:
+            with open('bc-schools.csv', self.filemode) as csv_file:
                 csv_file.write('{},{},{},{},{},{},{},{},{},{},{},{}\n'.format(
                                 school, name, address, city, province,
                                 postal_code, schoolboard, contact,
@@ -225,7 +227,7 @@ class Crawler(object):
         else:
             print 'no email found\n--------------------'
 
-def set_logger(loglevel):
+def set_logger(loglevel, file_mode):
     """Sets up logging to a file.
     
     Logging output is appended to the file if it already exists.
@@ -236,31 +238,38 @@ def set_logger(loglevel):
     logging.basicConfig(format = '%(asctime)s %(levelname)s: %(message)s',
             datefmt = '%I:%M:%S',  # Add %p for AM or PM.
             filename = 'bc_schools.log',
-            filemode = 'w',  # Overwrite file if exists -- default is append.
+            filemode = file_mode,
             level = numlevel)
 
 def parse_args():
     parser = argparse.ArgumentParser(
-            description = 'Scrape contact info from British Columbia schools.\n'
-                          'Log saved in bc_schools.log',
-            epilog = 'Happy scraping, use with care!')
+        description = 'Scrape contact info from British Columbia schools.\n'
+                      'Log saved in bc_schools.log',
+        epilog = 'Happy scraping, use with care!')
     parser.add_argument('--log', default = 'info', dest = 'loglevel',
-            help = 'Log level (default: %(default)s)',
-            choices = ['debug', 'info', 'warning', 'error', 'critical'])
+                        help = 'Log level (default: %(default)s)',
+                        choices = ['debug', 'info', 'warning', 'error',
+                                   'critical'])
     parser.add_argument('--max-pause', type = int, default = 0, dest = 'seconds',
-            help = 'Maximum amount of seconds to pause between page requests (default: %(default)s sec)')
+                        help = 'Maximum amount of seconds to pause between '
+                                'page requests (default: %(default)s sec)')
+    parser.add_argument('--append', action = 'store_const', const = 'a',
+                        default = 'w', dest = 'filemode',
+                        help = 'Append to the log and output files instead of '
+                               'overwriting them.')
     parser.add_argument('-v, --version', action = 'version',
-            version = '%(prog)s 1.0')
+                        version = '%(prog)s 0.1') # TODO: update to 1.0 when complete
     args = parser.parse_args()
     return args
 
 def main():
     args = parse_args()
-    set_logger(args.loglevel)
+    set_logger(args.loglevel, args.filemode)
     logging.info('Started on %s', strftime("%A, %d %B %Y at %I:%M%p"))
-    logging.info('Log level = %s, Max seconds to pause = %d', args.loglevel,
-                 args.seconds)
-    crawler = Crawler('http://www.bced.gov.bc.ca/apps/imcl/imclWeb/', args.seconds)
+    logging.info('Log level = %s, Max seconds to pause = %d, File mode = %s',
+                 args.loglevel, args.seconds, args.filemode)
+    crawler = Crawler('http://www.bced.gov.bc.ca/apps/imcl/imclWeb/',
+                      args.seconds, args.filemode)
     crawler.crawl()
 
 if __name__ == '__main__':
