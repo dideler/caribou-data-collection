@@ -42,15 +42,13 @@ class Crawler(object):
     - base_url: The URL of the website that contains the school directories.
     - home_url: The homepage of the website.
     - seconds: The maximum amount of seconds to wait between page requests.
-    - filemode: Write or append. Affects log file and data output file.
     """
 
-    def __init__(self, url, secs, filemode):
+    def __init__(self, url, secs):
         """Inits Crawler with the proper URLs and an empty browser driver."""
         self.base_url = url
         self.home_url = url + 'Home.do'
         self.seconds = secs
-        self.filemode = filemode
         self._browser = None
         self._tablerow_xpath = '/html/body/div/table[3]/tbody/tr[1]/td[4]/table[2]/tbody/tr'
         self._leftcol_xpath = self._tablerow_xpath + '/td[1]'
@@ -194,9 +192,11 @@ class Crawler(object):
             #  school type, grades offered, private or public, enrolment date,
             #  phone number, and fax number
             
-            # TODO: add mode as variable, let user decide what to do.
-            #       default will be write mode.
-            with open('bc-schools.csv', self.filemode) as csv_file:
+            # Because this file is constantly being opened and closed for every
+            # entry, the filemode has to be append. If the performance suffers
+            # too greatly, open the file before crawling and close it when
+            # completed, though this will complicate error handling.
+            with open('bc-schools.csv', 'a') as csv_file:
                 csv_file.write('{},{},{},{},{},{},{},{},{},{},{},{}\n'.format(
                                 school, name, address, city, province,
                                 postal_code, schoolboard, contact,
@@ -255,8 +255,7 @@ def parse_args():
                                 'page requests (default: %(default)s sec)')
     parser.add_argument('--append', action = 'store_const', const = 'a',
                         default = 'w', dest = 'filemode',
-                        help = 'Append to the log and output files instead of '
-                               'overwriting them.')
+                        help = 'Append to the log file instead of overwriting it.')
     parser.add_argument('-v, --version', action = 'version',
                         version = '%(prog)s 0.1') # TODO: update to 1.0 when complete
     args = parser.parse_args()
@@ -269,7 +268,7 @@ def main():
     logging.info('Log level = %s, Max seconds to pause = %d, File mode = %s',
                  args.loglevel, args.seconds, args.filemode)
     crawler = Crawler('http://www.bced.gov.bc.ca/apps/imcl/imclWeb/',
-                      args.seconds, args.filemode)
+                      args.seconds)
     crawler.crawl()
 
 if __name__ == '__main__':
