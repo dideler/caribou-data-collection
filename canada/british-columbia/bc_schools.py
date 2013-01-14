@@ -191,7 +191,15 @@ class Crawler(object):
             # There is extra data that we are not extracting, for example:
             #  school type, grades offered, private or public, enrolment date,
             #  phone number, and fax number
-                
+            
+            # TODO: add mode as variable, let user decide what to do.
+            #       default will be write mode.
+            with open('bc-schools.csv', 'a') as csv_file:
+                csv_file.write('{},{},{},{},{},{},{},{},{},{},{},{}\n'.format(
+                                school, name, address, city, province,
+                                postal_code, schoolboard, contact,
+                                position, email, timezone, country))
+
             print ('school id = {}\n'
                    'school name = {}\n'
                    'address = {}\n'
