@@ -254,7 +254,7 @@ def parse_args():
                         default = 'w', dest = 'filemode',
                         help = 'Append to the log file instead of overwriting it.')
     parser.add_argument('-v, --version', action = 'version',
-                        version = '%(prog)s 0.1') # TODO: update to 1.0 when complete
+                        version = '%(prog)s 1.0')
     args = parser.parse_args()
     return args
 
