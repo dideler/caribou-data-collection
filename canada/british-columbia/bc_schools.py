@@ -8,7 +8,7 @@ import argparse
 import logging
 from sys import argv
 from time import strftime
-from time import sleep  # Used to randomize crawling pattern and to cut the server some slack.
+from time import sleep  # Randomize crawling pattern and give server some slack.
 from random import randint
 from urllib import pathname2url
 
@@ -156,6 +156,7 @@ class Crawler(object):
         postal_code = None
         schoolboard = 'null'
         contact = None
+        phone = None
         position = None
         email = None
         timezone = 'America/Vancouver'
@@ -199,7 +200,7 @@ class Crawler(object):
             with open('bc-schools.csv', 'a') as csv_file:
                 csv_file.write('{},{},{},{},{},{},{},{},{},{},{},{}\n'.format(
                                 school, name, address, city, province,
-                                postal_code, schoolboard, contact,
+                                postal_code, schoolboard, contact, phone,
                                 position, email, timezone, country))
 
             print ('school id = {}\n'
@@ -210,19 +211,15 @@ class Crawler(object):
                    'postal code = {}\n'
                    'schoolboard = {}\n'
                    'contact name = {}\n'
+                   'contact phone = {}\n'
                    'contact position = {}\n'
                    'contact email = {}\n'
                    'timezone = {}\n'
                    'country = {}').format(school, name, address, city, province,
                                           postal_code, schoolboard, contact,
-                                          position, email, timezone, country)
+                                          phone, position, email, timezone,
+                                          country)
 
-            '''
-            for data in left_col_data:
-                print data
-            for data in right_col_data:
-                print data
-            '''
             print '--------------------'
         else:
             print 'no email found\n--------------------'
