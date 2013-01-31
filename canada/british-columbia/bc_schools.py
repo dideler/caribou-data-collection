@@ -250,7 +250,7 @@ def parse_args():
     parser.add_argument('--max-pause', type = int, default = 0, dest = 'seconds',
                         help = 'Maximum amount of seconds to pause between '
                                 'page requests (default: %(default)s sec)')
-    parser.add_argument('--append', action = 'store_const', const = 'a',
+    parser.add_argument('-a', '--append', action = 'store_const', const = 'a',
                         default = 'w', dest = 'filemode',
                         help = 'Append to the log file instead of overwriting it.')
     parser.add_argument('-u', '--unique', action = 'store_true',
