@@ -198,7 +198,7 @@ class Crawler(object):
             # too greatly, open the file before crawling and close it when
             # completed, though this will complicate error handling.
             with open('bc-schools.csv', 'a') as csv_file:
-                csv_file.write('{},{},{},{},{},{},{},{},{},{},{},{}\n'.format(
+                csv_file.write('{},{},{},{},{},{},{},{},{},{},{},{},{}\n'.format(
                                 school, name, address, city, province,
                                 postal_code, schoolboard, contact, phone,
                                 position, email, timezone, country))
