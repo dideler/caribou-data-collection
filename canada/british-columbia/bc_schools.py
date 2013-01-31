@@ -255,7 +255,7 @@ def parse_args():
                         help = 'Append to the log file instead of overwriting it.')
     parser.add_argument('-u', '--unique', action = 'store_true',
                         help = 'Output file will contain unique data')
-    parser.add_argument('-v, --version', action = 'version',
+    parser.add_argument('-v', '--version', action = 'version',
                         version = '%(prog)s 1.0')
     args = parser.parse_args()
     return args
