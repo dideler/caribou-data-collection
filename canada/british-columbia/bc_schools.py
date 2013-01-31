@@ -224,6 +224,10 @@ class Crawler(object):
         else:
             print 'no email found\n--------------------'
 
+def remove_dupes():
+    """Removes duplicate lines from the output file."""
+    pass
+
 def set_logger(loglevel, file_mode):
     """Sets up logging to a file.
     
@@ -269,6 +273,8 @@ def main():
     crawler = Crawler('http://www.bced.gov.bc.ca/apps/imcl/imclWeb/',
                       args.seconds)
     crawler.crawl()
+    if args.unique:
+        remove_dupes()
 
 if __name__ == '__main__':
     main()
