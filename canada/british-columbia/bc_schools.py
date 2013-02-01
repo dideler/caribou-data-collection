@@ -33,22 +33,25 @@ Examples:
     python bc_schools.py --log info
     python bc_schools.py --max-pause 5
     python bc_schools.py --append
+    python bc_schools.py --unique
 """
 
 class Crawler(object):
     """A crawler that collects contact info of all K12 schools in BC, Canada.
 
     Attributes:
-    - base_url: The URL of the website that contains the school directories.
-    - home_url: The homepage of the website.
-    - seconds: The maximum amount of seconds to wait between page requests.
+    - base_url: URL of the website that contains the school directories.
+    - home_url: Homepage of the website.
+    - seconds: Maximum amount of seconds to wait between page requests.
+    - output: Output file that will contain the extracted data.
     """
 
-    def __init__(self, url, secs):
+    def __init__(self, url, secs, out):
         """Inits Crawler with the proper URLs and an empty browser driver."""
         self.base_url = url
         self.home_url = url + 'Home.do'
         self.seconds = secs
+        self.output = out
         self._browser = None
         self._tablerow_xpath = '/html/body/div/table[3]/tbody/tr[1]/td[4]/table[2]/tbody/tr'
         self._leftcol_xpath = self._tablerow_xpath + '/td[1]'
@@ -194,10 +197,10 @@ class Crawler(object):
             #  phone number, and fax number
             
             # Because this file is constantly being opened and closed for every
-            # entry, the filemode has to be append. If the performance suffers
+            # entry, the filemode HAS to be append. If the performance suffers
             # too greatly, open the file before crawling and close it when
             # completed, though this will complicate error handling.
-            with open('bc-schools.csv', 'a') as csv_file:
+            with open(self.output, 'a') as csv_file:
                 csv_file.write('{},{},{},{},{},{},{},{},{},{},{},{},{}\n'.format(
                                 school, name, address, city, province,
                                 postal_code, schoolboard, contact, phone,
@@ -224,9 +227,14 @@ class Crawler(object):
         else:
             print 'no email found\n--------------------'
 
-def remove_dupes():
+def remove_dupes(infile):
     """Removes duplicate lines from the output file."""
-    pass
+    s = set()
+    with open("unique-" + infile, 'w') as outfile:
+        for line in open(infile):
+            if line not in s:
+                outfile.write(line)
+                s.add(line)
 
 def set_logger(loglevel, file_mode):
     """Sets up logging to a file.
@@ -244,23 +252,22 @@ def set_logger(loglevel, file_mode):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description = 'Scrape contact info from British Columbia schools.\n'
+        description='Scrape contact info from British Columbia schools.\n'
                       'Log saved in bc_schools.log',
-        epilog = 'Happy scraping, use with care!')
-    parser.add_argument('--log', default = 'info', dest = 'loglevel',
-                        help = 'Log level (default: %(default)s)',
-                        choices = ['debug', 'info', 'warning', 'error',
-                                   'critical'])
-    parser.add_argument('--max-pause', type = int, default = 0, dest = 'seconds',
-                        help = 'Maximum amount of seconds to pause between '
-                                'page requests (default: %(default)s sec)')
-    parser.add_argument('-a', '--append', action = 'store_const', const = 'a',
-                        default = 'w', dest = 'filemode',
-                        help = 'Append to the log file instead of overwriting it.')
-    parser.add_argument('-u', '--unique', action = 'store_true',
-                        help = 'Output file will contain unique data')
-    parser.add_argument('-v', '--version', action = 'version',
-                        version = '%(prog)s 1.0')
+        epilog='Happy scraping, use with care!')
+    parser.add_argument('--log', default='info', dest='loglevel',
+                        help='Log level (default: %(default)s)',
+                        choices=['debug', 'info', 'warning', 'error', 'critical'])
+    parser.add_argument('--max-pause', type=int, default=0, dest='seconds',
+                        help='Maximum amount of seconds to pause between '
+                             'page requests (default: %(default)s sec)')
+    parser.add_argument('-a', '--append', action='store_const', const='a',
+                        default='w', dest='filemode',
+                        help='Append to the log file instead of overwriting it.')
+    parser.add_argument('-u', '--unique', action='store_true',
+                        help='Output file will contain unique data')
+    parser.add_argument('-o', '--output', type=str, default='bc-schools.csv')
+    parser.add_argument('-v', '--version', action='version', version = '%(prog)s 1.0')
     args = parser.parse_args()
     return args
 
@@ -271,10 +278,10 @@ def main():
     logging.info('Log level = %s, Max seconds to pause = %d, File mode = %s',
                  args.loglevel, args.seconds, args.filemode)
     crawler = Crawler('http://www.bced.gov.bc.ca/apps/imcl/imclWeb/',
-                      args.seconds)
+                      args.seconds, args.output)
     crawler.crawl()
     if args.unique:
-        remove_dupes()
+        remove_dupes(args.output)
 
 if __name__ == '__main__':
     main()
