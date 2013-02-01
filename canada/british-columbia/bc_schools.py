@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2012  Dennis Ideler <ideler.dennis at gmail.com>
+# Copyright (c) 2012-2013  Dennis Ideler <ideler.dennis at gmail.com>
 # Prepared for Professor Thomas Wolf <twolf at brocku.ca>
 # School contact info to be used for the Caribou Cup Mathematics Competition.
 
