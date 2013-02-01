@@ -8,7 +8,7 @@ import argparse
 import logging
 from sys import argv
 from time import strftime
-from time import sleep  # Randomize crawling pattern and give server some slack.
+from time import sleep  # Randomize scraping pattern and give server some slack.
 from random import randint
 from urllib import pathname2url
 
@@ -21,8 +21,8 @@ from selenium.common.exceptions import UnexpectedTagNameException
 """Collects contact info from all schools in British Columbia.
 
 There is an option to specify a maximum time (in seconds) to wait between page
-requests. This option is useful for randomizing the crawling patterns, which
-makes it less obvious that the crawling is performed by a bot. It also reduces
+requests. This option is useful for randomizing the scraping patterns, which
+makes it less obvious that the scraping is performed by a bot. It also reduces
 the load on the server(s) by spreading out the requests over a longer period.
 
 Examples:
@@ -36,8 +36,8 @@ Examples:
     python bc_schools.py --unique
 """
 
-class Crawler(object):
-    """A crawler that collects contact info of all K12 schools in BC, Canada.
+class Scraper(object):
+    """A scraper that collects contact info of all K12 schools in BC, Canada.
 
     Attributes:
     - base_url: URL of the website that contains the school directories.
@@ -47,7 +47,7 @@ class Crawler(object):
     """
 
     def __init__(self, url, secs, out):
-        """Inits Crawler with the proper URLs and an empty browser driver."""
+        """Inits Scraper with the proper URLs and an empty browser driver."""
         self.base_url = url
         self.home_url = url + 'Home.do'
         self.seconds = secs
@@ -58,8 +58,8 @@ class Crawler(object):
         self._rightcol_xpath = self._tablerow_xpath + '/td[3]'
         self._email_xpath = self._rightcol_xpath + '/a'
 
-    def crawl(self):
-        """Crawls the website and extracts the information of all BC schools."""
+    def scrape(self):
+        """Scrapes the website and extracts the information of all BC schools."""
         self._browser = webdriver.Chrome()
         self._browser.get(self.home_url)
         assert 'School and District Contacts' in self._browser.title, 'Wrong webpage.'
@@ -68,10 +68,10 @@ class Crawler(object):
         #       no longer exist in cache and Selenium will complain and crash.
         #       A workaround is to re-find the element after every page reload.
 
-        self.__crawl_cities()
+        self.__scrape_cities()
         self._browser.close()
 
-    def __crawl_cities(self):
+    def __scrape_cities(self):
         # Using Select is slightly more efficient than:
         #   city_list = browser.find_element_by_id('citySelect')
         #   city_options = city_list.find_elements_by_tag_name('option')
@@ -88,15 +88,15 @@ class Crawler(object):
         num_cities = len(cities)
         logging.info("Found %d cities", num_cities-1) # First option is not a city.
 
-        # Dynamically create the city URLs and crawl each city.
+        # Dynamically create the city URLs and scrape each city.
         for i, city in enumerate(cities):
             if i == 0: continue # First city option is "City", skip it.
             city_query = '?city={}'.format(pathname2url(city))
             city_url = self.home_url + city_query
-            logging.info("Crawling city %d: %s", i, city)
+            logging.info("Scraping city %d: %s", i, city)
             sleep(randint(0, self.seconds)) # Randomly pause between requests.
             self._browser.get(city_url)
-            self.__crawl_schools_in_city(city)
+            self.__scrape_schools_in_city(city)
         ''' The above method of iterating through cities is much quicker than:
         for i in xrange(1, num_cities):
             while True: # This is a dirty hack since Selenium's wait methods aren't working.
@@ -105,7 +105,7 @@ class Crawler(object):
                     expected_city, actual_city = cities[i], city_list.options[i].text.strip()
                     assert expected_city == actual_city, ('Wrong city selected. '
                         'Expected: {}. Actual: {}.').format(expected_city, actual_city)
-                    logging.info("Crawling city #%d: %s", i, actual_city)
+                    logging.info("Scraping city #%d: %s", i, actual_city)
                     city_list.select_by_index(i)
                 except StaleElementReferenceException:
                     # By the time it retries, the element should have loaded.
@@ -113,7 +113,7 @@ class Crawler(object):
                 break
         '''
 
-    def __crawl_schools_in_city(self, city):
+    def __scrape_schools_in_city(self, city):
         try:
             school_list = Select(self._browser.find_element_by_id('citySchoolSelect'))
         except UnexpectedTagNameException:
@@ -121,13 +121,13 @@ class Crawler(object):
         except StaleElementReferenceException:
             logging.critical('citySchoolSelect element does not exist.')
         # Create a list of tuples for each school -> (school name, school value)
-        # This allows for crawling without using the school_list element
+        # This allows for scraping without using the school_list element
         # (which ceases to exist in memory when the page changes).
         schools = [(option.text.strip(), option.get_attribute('value')) for option in school_list.options]
         num_schools = len(schools)
         logging.info("Found %d schools", num_schools-1) # First option is not a school.
 
-        # Dynamically create the school URLs and crawl the schools in the city.
+        # Dynamically create the school URLs and scrape the schools in the city.
         # This strategy is _much_ quicker than clicking every school option
         # in the dropdown list, loop-waiting until the page loads, going back
         # to the previous page using the page history, and repeating.
@@ -135,7 +135,7 @@ class Crawler(object):
             if i == 0: continue # First school option is "School Name", skip it.
             school_name, school_value = school[0], school[1]
             school_url = self.base_url + school_value
-            logging.info("\tCrawling school %d: %s", i, school_name)
+            logging.info("\tScraping school %d: %s", i, school_name)
             sleep(randint(0, self.seconds)) # Randomly pause between requests.
             self._browser.get(school_url)
             self.__extract_contact_info(school_name, city)
@@ -198,7 +198,7 @@ class Crawler(object):
             
             # Because this file is constantly being opened and closed for every
             # entry, the filemode HAS to be append. If the performance suffers
-            # too greatly, open the file before crawling and close it when
+            # too greatly, open the file before scraping and close it when
             # completed, though this will complicate error handling.
             with open(self.output, 'a') as csv_file:
                 csv_file.write('{},{},{},{},{},{},{},{},{},{},{},{},{}\n'.format(
@@ -278,9 +278,9 @@ def main():
     logging.info('Started on %s', strftime("%A, %d %B %Y at %I:%M%p"))
     logging.info('Log level = %s, Max seconds to pause = %d, File mode = %s',
                  args.loglevel, args.seconds, args.filemode)
-    crawler = Crawler('http://www.bced.gov.bc.ca/apps/imcl/imclWeb/',
+    scraper = Scraper('http://www.bced.gov.bc.ca/apps/imcl/imclWeb/',
                       args.seconds, args.output)
-    crawler.crawl()
+    scraper.scrape()
     if args.unique:
         remove_dupes(args.output)
 
