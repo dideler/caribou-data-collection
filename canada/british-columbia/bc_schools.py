@@ -263,10 +263,11 @@ def parse_args():
                              'page requests (default: %(default)s sec)')
     parser.add_argument('-a', '--append', action='store_const', const='a',
                         default='w', dest='filemode',
-                        help='Append to the log file instead of overwriting it.')
+                        help='Append to the log file instead of overwriting it')
     parser.add_argument('-u', '--unique', action='store_true',
                         help='Output file will contain unique data')
-    parser.add_argument('-o', '--output', type=str, default='bc-schools.csv')
+    parser.add_argument('-o', '--output', type=str, default='bc-schools.csv',
+                        help='Specify the output filename (default: %(default)s)')
     parser.add_argument('-v', '--version', action='version', version = '%(prog)s 1.0')
     args = parser.parse_args()
     return args
