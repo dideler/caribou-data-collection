@@ -251,10 +251,11 @@ def parse_args():
                         help='Append to the log file instead of overwriting it')
     parser.add_argument('-u', '--unique', action='store_true',
                         help='Output file will contain unique data')
-    parser.add_argument('-o', '--output', type=str, default='bc-schools.csv',
+    parser.add_argument('-o', '--output', type=str, default='bc-schools',
                         help='Specify the output filename (default: %(default)s)')
     parser.add_argument('-v', '--version', action='version', version = '%(prog)s 1.0')
     args = parser.parse_args()
+    args.output = args.output.replace('.csv', '') + strftime('-%b-%d-%Y.csv')
     return args
 
 def main():
