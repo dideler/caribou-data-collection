@@ -59,7 +59,7 @@ class Scraper(object):
         self._email_xpath = self._rightcol_xpath + '/a'
 
     def scrape(self):
-        """Scrapes the website and extracts the information of all BC schools."""
+        """Scrapes website and extracts the contact info of all schools."""
         self._browser = webdriver.Chrome()
         self._browser.get(self.home_url)
         assert 'School and District Contacts' in self._browser.title, 'Wrong webpage.'
@@ -72,15 +72,14 @@ class Scraper(object):
         self._browser.close()
 
     def __scrape_cities(self):
-        # Using Select is slightly more efficient than:
-        #   city_list = browser.find_element_by_id('citySelect')
-        #   city_options = city_list.find_elements_by_tag_name('option')
+        # `Select` is more efficient than `find_elements_by_tag_name('option')`
         try:
             city_list = Select(self._browser.find_element_by_id('citySelect'))
         except UnexpectedTagNameException:
             logging.critical('citySelect element is not a SELECT tag.')
         except StaleElementReferenceException:
             logging.critical('citySelect element does not exist.')
+
         # Currently it makes no difference using the option's text or value,
         # but it's safer to use the value as it's used for the query.
         # To use the option's text, return option.text.strip() in the loop.
@@ -97,21 +96,6 @@ class Scraper(object):
             sleep(randint(0, self.seconds)) # Randomly pause between requests.
             self._browser.get(city_url)
             self.__scrape_schools_in_city(city)
-        ''' The above method of iterating through cities is much quicker than:
-        for i in xrange(1, num_cities):
-            while True: # This is a dirty hack since Selenium's wait methods aren't working.
-                try:
-                    city_list = Select(browser.find_element_by_id('citySelect'))
-                    expected_city, actual_city = cities[i], city_list.options[i].text.strip()
-                    assert expected_city == actual_city, ('Wrong city selected. '
-                        'Expected: {}. Actual: {}.').format(expected_city, actual_city)
-                    logging.info("Scraping city #%d: %s", i, actual_city)
-                    city_list.select_by_index(i)
-                except StaleElementReferenceException:
-                    # By the time it retries, the element should have loaded.
-                    continue
-                break
-        '''
 
     def __scrape_schools_in_city(self, city):
         try:
@@ -120,6 +104,7 @@ class Scraper(object):
             logging.critical('citySchoolSelect element is not a SELECT tag.')
         except StaleElementReferenceException:
             logging.critical('citySchoolSelect element does not exist.')
+
         # Create a list of tuples for each school -> (school name, school value)
         # This allows for scraping without using the school_list element
         # (which ceases to exist in memory when the page changes).
