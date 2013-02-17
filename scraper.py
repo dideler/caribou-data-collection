@@ -10,6 +10,8 @@
 #   import usa
 #   import india
 #   ...etc.
-from canada.britishcolumbia import bc_schools
+from canada.britishcolumbia import bc_scraper
 
-bc_schools.main()
+# TODO: Give example of commands.
+
+bc_scraper.main()
