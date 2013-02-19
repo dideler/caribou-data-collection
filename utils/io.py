@@ -4,8 +4,9 @@
 
 """A module for common IO operations shared between the scraper modules.
 
-Note that functions executed in this module will use this module's current
-working directory. Keep that in mind when importing this module.
+Note that functions executed in this module will use the working directory that
+script was executed from. For example, when using scraper.py, it will use its
+directory.
 
 TODO: Decide on where to keep the following functionality:
  - set_logger()
@@ -15,16 +16,36 @@ TODO: Decide on where to keep the following functionality:
 
 import os
 
-def pwd():
-    """Print working directory."""
-    return os.getcwd()
+datapath = None
 
-def create_data_dir():
-    """Creates the data directory if it doesn't exist yet."""
-    # TODO: Have it work when running an individual module as a script.
-    # That is, not through scraper.py. Relative path will be different.
-    if not os.path.exists('data'):
-        os.mkdir('data')
+def data_dir_exists():
+    """Creates the data directory if it doesn't exist and sets the path.
+    
+    This allows the scrapers to run correctly when run via scrapers.py
+    or as standalone scripts in their own directories.
+    """
+    global datapath
+    if os.path.isdir('./data'):
+        datapath = './data/'
+    elif os.path.isdir('../../data'):
+        datapath = '../../data/'
+    else:
+        response = raw_input('No data directory exists. Create one [Y/n]? ')
+        if not response or response[0].lower() == 'y':
+            basename = os.path.basename(os.getcwd())
+            if basename == 'britishcolumbia':
+                datapath = '../../data/'
+                os.mkdir(datapath)
+            elif basename == 'caribou-data-collection':
+                datapath = './data/'
+                os.mkdir(datapath)
+            else:
+                raise RuntimeError('Directory not created. '
+                                   'Please switch to the caribou-data-collection'
+                                   ' directory and try again.')
+        else:
+            return False
+    return True
 
 def remove_dupes(infile):
     """Removes duplicate lines from the output file."""
