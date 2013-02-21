@@ -17,6 +17,7 @@ TODO: Decide on where to keep the following functionality:
 import os
 
 datapath = None
+COUNTRIES = ('canada', 'india')
 
 def data_dir_exists():
     """Creates the data directory if it doesn't exist and sets the path.
@@ -32,13 +33,15 @@ def data_dir_exists():
     else:
         response = raw_input('No data directory exists. Create one [Y/n]? ')
         if not response or response[0].lower() == 'y':
-            basename = os.path.basename(os.getcwd())
-            if basename == 'britishcolumbia':
-                datapath = '../../data/'
-                os.mkdir(datapath)
-            elif basename == 'caribou-data-collection':
+            directory = os.getcwd()
+            if os.path.basename(directory) == 'caribou-data-collection':
                 datapath = './data/'
                 os.mkdir(datapath)
+                print 'Created', datapath
+            elif os.path.basename(os.path.dirname(directory)) in COUNTRIES:
+                datapath = '../../data/'
+                os.mkdir(datapath)
+                print 'Created', datapath
             else:
                 raise RuntimeError('Directory not created. '
                                    'Please switch to the caribou-data-collection'
