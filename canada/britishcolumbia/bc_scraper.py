@@ -253,7 +253,7 @@ def parse_args():
                         help='Append to the log file instead of overwriting it')
     parser.add_argument('-u', '--unique', action='store_true',
                         help='Output file will contain unique data')
-    parser.add_argument('-o', '--output', type=str, default='bc-schools',
+    parser.add_argument('-o', '--output', type=str, default='britishcolumbia',
                         help='Specify the output filename (default: %(default)s)')
     parser.add_argument('-v', '--version', action='version', version = '%(prog)s 1.0')
     args = parser.parse_args()
@@ -268,7 +268,7 @@ def main():
     else:
         print 'You need a data directory to continue.'
         exit(1)
-
+    '''
     set_logger(args.loglevel, args.filemode)
     logging.info('Started on %s', strftime("%A, %d %B %Y at %I:%M%p"))
     logging.info('Log level = %s, Max seconds to pause = %d, File mode = %s',
@@ -276,6 +276,7 @@ def main():
     scraper = Scraper('http://www.bced.gov.bc.ca/apps/imcl/imclWeb/',
                       args.seconds, datapath)
     scraper.scrape()
+    '''
     if args.unique:
         io.remove_dupes(datapath)
 
