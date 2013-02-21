@@ -21,7 +21,7 @@ COUNTRIES = ('canada', 'india')
 
 def data_dir_exists():
     """Creates the data directory if it doesn't exist and sets the path.
-    
+
     This allows the scrapers to run correctly when run via scrapers.py
     or as standalone scripts in their own directories.
     """
@@ -52,10 +52,9 @@ def data_dir_exists():
 
 def remove_dupes(infile):
     """Removes duplicate lines from the output file."""
-    # TODO: Update location of input file (it should be in data/).
-    # TODO: Create a datapath variable.
+    filename = infile.replace('.csv', '-unique.csv')
     s = set()
-    with open("unique-" + infile, 'w') as outfile:
+    with open(filename, 'w') as outfile:
         for line in open(infile):
             if line not in s:
                 outfile.write(line)
