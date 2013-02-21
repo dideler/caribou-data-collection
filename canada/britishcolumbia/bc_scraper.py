@@ -7,6 +7,7 @@
 import argparse
 import logging
 from sys import argv
+from sys import exit
 from time import strftime
 from time import sleep  # Randomize scraping pattern and give server some slack.
 from random import randint
@@ -17,6 +18,16 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import UnexpectedTagNameException
+
+try:
+    from utils import io
+except ImportError:
+    # Executed as standalone script. Add toplevel dir to python path.
+    from os import path as ospath
+    from sys import path as syspath
+    parentdir = ospath.dirname(ospath.dirname(ospath.dirname(ospath.abspath(__file__))))
+    syspath.insert(0, parentdir)
+    from utils import io
 
 """Collects contact info from all schools in British Columbia.
 
@@ -43,7 +54,7 @@ class Scraper(object):
     - base_url: URL of the website that contains the school directories.
     - home_url: Homepage of the website.
     - seconds: Maximum amount of seconds to wait between page requests.
-    - output: Output file that will contain the extracted data.
+    - output: Output file path that will contain the extracted data.
     """
 
     def __init__(self, url, secs, out):
@@ -212,15 +223,6 @@ class Scraper(object):
         else:
             print 'no email found\n--------------------'
 
-def remove_dupes(infile):
-    """Removes duplicate lines from the output file."""
-    s = set()
-    with open("unique-" + infile, 'w') as outfile:
-        for line in open(infile):
-            if line not in s:
-                outfile.write(line)
-                s.add(line)
-
 def set_logger(loglevel, file_mode):
     """Sets up logging to a file.
     
@@ -231,7 +233,7 @@ def set_logger(loglevel, file_mode):
         raise ValueError('Invalid log level: ', loglevel)
     logging.basicConfig(format = '%(asctime)s %(levelname)s: %(message)s',
             datefmt = '%I:%M:%S',  # Add %p for AM or PM.
-            filename = 'bc_schools.log',
+            filename = 'britishcolumbia.log',
             filemode = file_mode,
             level = numlevel)
 
@@ -260,15 +262,24 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    if io.data_dir_exists():
+        datapath = io.datapath + args.output
+    else:
+        print 'You need a data directory to continue.'
+        exit(1)
+
     set_logger(args.loglevel, args.filemode)
     logging.info('Started on %s', strftime("%A, %d %B %Y at %I:%M%p"))
     logging.info('Log level = %s, Max seconds to pause = %d, File mode = %s',
                  args.loglevel, args.seconds, args.filemode)
     scraper = Scraper('http://www.bced.gov.bc.ca/apps/imcl/imclWeb/',
-                      args.seconds, args.output)
+                      args.seconds, datapath)
     scraper.scrape()
     if args.unique:
-        remove_dupes(args.output)
+        io.remove_dupes(datapath)
 
 if __name__ == '__main__':
+    # Allow for this module to be run as a script (e.g. python bc_schools.py)
+    # Note: This conditional is false when the module is imported.
     main()
