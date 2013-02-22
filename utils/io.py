@@ -19,29 +19,32 @@ import os
 datapath = None
 COUNTRIES = ('canada', 'india')
 
-def data_dir_exists():
-    """Creates the data directory if it doesn't exist and sets the path.
+def dir_exists(dirname):
+    """Creates the specified directory if it doesn't exist and sets the path.
 
     This allows the scrapers to run correctly when run via scrapers.py
     or as standalone scripts in their own directories.
     """
     global datapath
-    if os.path.isdir('./data'):
-        datapath = './data/'
-    elif os.path.isdir('../../data'):
-        datapath = '../../data/'
+    path1 = './' + dirname + '/'
+    path2 = '../../' + dirname + '/'
+    if os.path.isdir(path1):
+        datapath = path1
+    elif os.path.isdir(path2):
+        datapath = path2
     else:
-        response = raw_input('No data directory exists. Create one [Y/n]? ')
+        response = raw_input("'{}' directory does not exist. "
+                             "Create it [Y/n]? ".format(dirname))
         if not response or response[0].lower() == 'y':
             directory = os.getcwd()
             if os.path.basename(directory) == 'caribou-data-collection':
-                datapath = './data/'
+                datapath = path1
                 os.mkdir(datapath)
                 print 'Created', datapath
             elif os.path.basename(os.path.dirname(directory)) in COUNTRIES:
                 # Assumes scraper is located in a directory hierarchy such as
                 # /caribou-data-collection/country/region/scraper.py
-                datapath = '../../data/'
+                datapath = path2
                 os.mkdir(datapath)
                 print 'Created', datapath
             else:
