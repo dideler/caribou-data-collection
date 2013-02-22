@@ -39,6 +39,8 @@ def data_dir_exists():
                 os.mkdir(datapath)
                 print 'Created', datapath
             elif os.path.basename(os.path.dirname(directory)) in COUNTRIES:
+                # Assumes scraper is located in a directory hierarchy such as
+                # /caribou-data-collection/country/region/scraper.py
                 datapath = '../../data/'
                 os.mkdir(datapath)
                 print 'Created', datapath
