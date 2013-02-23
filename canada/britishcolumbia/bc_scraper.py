@@ -47,6 +47,8 @@ Examples:
     python bc_schools.py --unique
 """
 
+region = 'britishcolumbia'  # Region/state/province/etc.
+
 class Scraper(object):
     """A scraper that collects contact info of all K12 schools in BC, Canada.
 
@@ -223,7 +225,7 @@ class Scraper(object):
         else:
             print 'no email found\n--------------------'
 
-def set_logger(loglevel, file_mode):
+def set_logger(loglevel, file_mode, path):
     """Sets up logging to a file.
     
     Logging output is appended to the file if it already exists.
@@ -233,14 +235,13 @@ def set_logger(loglevel, file_mode):
         raise ValueError('Invalid log level: ', loglevel)
     logging.basicConfig(format = '%(asctime)s %(levelname)s: %(message)s',
             datefmt = '%I:%M:%S',  # Add %p for AM or PM.
-            filename = 'britishcolumbia.log',
+            filename = path + region + '.log',
             filemode = file_mode,
             level = numlevel)
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Scrape contact info from British Columbia schools.\n'
-                      'Log saved in bc_schools.log',
+        description='Scrape contact info from British Columbia schools.',
         epilog='Happy scraping, use with care!')
     parser.add_argument('--log', default='info', dest='loglevel',
                         help='Log level (default: %(default)s)',
@@ -253,7 +254,7 @@ def parse_args():
                         help='Append to the log file instead of overwriting it')
     parser.add_argument('-u', '--unique', action='store_true',
                         help='Output file will contain unique data')
-    parser.add_argument('-o', '--output', type=str, default='britishcolumbia',
+    parser.add_argument('-o', '--output', type=str, default=region,
                         help='Specify the output filename (default: %(default)s)')
     parser.add_argument('-v', '--version', action='version', version = '%(prog)s 1.0')
     args = parser.parse_args()
@@ -262,21 +263,23 @@ def parse_args():
 
 def main():
     args = parse_args()
-
-    if io.data_dir_exists():
+    
+    if io.dir_exists('logs'):
+        logpath = io.datapath
+    if io.dir_exists('data'):
         datapath = io.datapath + args.output
     else:
         print 'You need a data directory to continue.'
         exit(1)
-    '''
-    set_logger(args.loglevel, args.filemode)
+    
+    set_logger(args.loglevel, args.filemode, logpath)
     logging.info('Started on %s', strftime("%A, %d %B %Y at %I:%M%p"))
     logging.info('Log level = %s, Max seconds to pause = %d, File mode = %s',
                  args.loglevel, args.seconds, args.filemode)
     scraper = Scraper('http://www.bced.gov.bc.ca/apps/imcl/imclWeb/',
                       args.seconds, datapath)
     scraper.scrape()
-    '''
+    
     if args.unique:
         io.remove_dupes(datapath)
 
