@@ -8,10 +8,10 @@ Note that functions executed in this module will use the working directory that
 script was executed from. For example, when using scraper.py, it will use its
 directory.
 
-TODO: Decide on where to keep the following functionality:
+TODO: Long term we should also move the following function to utils:
  - set_logger()
  - parse_args()
- - file output in extract_contact_info()
+ - file output in extract_contact_info()?
 """
 
 import os
@@ -26,25 +26,33 @@ def dir_exists(dirname):
     or as standalone scripts in their own directories.
     """
     global datapath
-    path1 = './' + dirname + '/'
-    path2 = '../../' + dirname + '/'
-    if os.path.isdir(path1):
-        datapath = path1
-    elif os.path.isdir(path2):
-        datapath = path2
+    current_dir = './' + dirname + '/'
+    parent_dir = '../' + dirname + '/'
+    grandparent_dir = '../../' + dirname + '/'
+    if os.path.isdir(current_dir):
+        datapath = current_dir
+    elif os.path.isdir(parent_dir):
+        datapath = parent_dir
+    elif os.path.isdir(grandparent_dir):
+        datapath = grandparent_dir
     else:
         response = raw_input("'{}' directory does not exist. "
                              "Create it [Y/n]? ".format(dirname))
         if not response or response[0].lower() == 'y':
             directory = os.getcwd()
             if os.path.basename(directory) == 'caribou-data-collection':
-                datapath = path1
+                # E.g. /caribou-data-collection/scraper.py
+                datapath = current_dir
+                os.mkdir(datapath)
+                print 'Created', datapath
+            elif os.path.basename(directory) in COUNTRIES:
+                # E.g. /caribou-data-collection/country/scraper.py
+                datapath = parent_dir
                 os.mkdir(datapath)
                 print 'Created', datapath
             elif os.path.basename(os.path.dirname(directory)) in COUNTRIES:
-                # Assumes scraper is located in a directory hierarchy such as
-                # /caribou-data-collection/country/region/scraper.py
-                datapath = path2
+                # E.g. /caribou-data-collection/country/region/scraper.py
+                datapath = grandparent_dir
                 os.mkdir(datapath)
                 print 'Created', datapath
             else:
