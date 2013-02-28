@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2013  Dennis Ideler <ideler.dennis at gmail.com>
+# Copyright (c)2013  Dennis Ideler <ideler.dennis at gmail.com>
 # Prepared for Professor Thomas Wolf <twolf at brocku.ca>
 # School contact info to be used for the Caribou Cup Mathematics Competition.
 
 import argparse
 import logging
+from random import randint
+from string import lowercase
 from sys import argv
+from sys import exit
 from time import strftime
 from time import sleep  # Randomize scraping pattern and give server some slack.
-from random import randint
 from urllib import pathname2url
 
 from selenium import webdriver
@@ -18,11 +20,17 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import UnexpectedTagNameException
 
-from utils.io import remove_dupes
-from utils.io import pwd
-from utils import io
+try:
+    from utils import io
+except ImportError:
+    # Executed as standalone script. Add toplevel dir to python path.
+    from os import path as ospath
+    from sys import path as syspath
+    parentdir = ospath.dirname(ospath.dirname(ospath.abspath(__file__)))
+    syspath.insert(0, parentdir)
+    from utils import io
 
-"""Collects contact info from all schools in India.
+"""Collects contact info from schools in India.
 
 There is an option to specify a maximum time (in seconds) to wait between page
 requests. This option is useful for randomizing the scraping patterns, which
@@ -30,50 +38,71 @@ makes it less obvious that the scraping is performed by a bot. It also reduces
 the load on the server(s) by spreading out the requests over a longer period.
 
 Examples:
-    python bc_schools.py
-    python bc_schools.py --help
-    python bc_schools.py --version
-    python bc_schools.py --log=info
-    python bc_schools.py --log info
-    python bc_schools.py --max-pause 5
-    python bc_schools.py --append
-    python bc_schools.py --unique
+    python scraper.py
+    python scraper.py --help
+    python scraper.py --version
+    python scraper.py --log=info
+    python scraper.py --log info
+    python scraper.py --max-pause 5
+    python scraper.py --append
+    python scraper.py --unique
 """
 
+region = 'india'  # Region/state/province/etc.
+
 class Scraper(object):
-    """A scraper that collects contact info of all K12 schools in BC, Canada.
+    """A scraper that collects contact info of schools in India.
 
     Attributes:
     - base_url: URL of the website that contains the school directories.
-    - home_url: Homepage of the website.
     - seconds: Maximum amount of seconds to wait between page requests.
-    - output: Output file that will contain the extracted data.
+    - output: Output file path that will contain the extracted data.
     """
 
     def __init__(self, url, secs, out):
         """Inits Scraper with the proper URLs and an empty browser driver."""
         self.base_url = url
-        self.home_url = url + 'Home.do'
         self.seconds = secs
         self.output = out
         self._browser = None
-        self._tablerow_xpath = '/html/body/div/table[3]/tbody/tr[1]/td[4]/table[2]/tbody/tr'
-        self._leftcol_xpath = self._tablerow_xpath + '/td[1]'
-        self._rightcol_xpath = self._tablerow_xpath + '/td[3]'
-        self._email_xpath = self._rightcol_xpath + '/a'
+        #self._tablerow_xpath = '/html/body/div/table[3]/tbody/tr[1]/td[4]/table[2]/tbody/tr'
+        #self._leftcol_xpath = self._tablerow_xpath + '/td[1]'
+        #self._rightcol_xpath = self._tablerow_xpath + '/td[3]'
+        #self._email_xpath = self._rightcol_xpath + '/a'
 
     def scrape(self):
         """Scrapes website and extracts the contact info of all schools."""
         self._browser = webdriver.Chrome()
-        self._browser.get(self.home_url)
-        assert 'School and District Contacts' in self._browser.title, 'Wrong webpage.'
+        self._browser.get(self.base_url)
+        assert 'AllView' in self._browser.title, 'Wrong webpage.'
         
         # NOTE: The page reloads on every option click. Thus the element will
         #       no longer exist in cache and Selenium will complain and crash.
         #       A workaround is to re-find the element after every page reload.
 
-        self.__scrape_cities()
+        self.__search_by_alphabet()
         self._browser.close()
+
+    def __search_by_alphabet(self):
+        """Search for schools by querying each letter of the alphabet."""
+
+        # Select the 'Keyword wise' radiobox.
+        self._browser.find_element_by_id('optlist_0').click()
+
+        for letter in lowercase:
+            # Find the search box, clear it, and enter the next letter.
+            search_box = self._browser.find_element_by_id('keytext')
+            search_box.clear()
+            search_box.send_keys(letter)
+
+            # Find the search submit button and click it.
+            self._browser.find_element_by_id('search').click()
+
+            logging.info("Searching for schools with the letter '%s' in the "
+                         "name or address.", letter)
+            #  next_button = b.find_element_by_id('Button1')
+            #  next_button.get_attribute('value') == 'Next >>'
+            #  next_button.is_enabled()
 
     def __scrape_cities(self):
         # `Select` is more efficient than `find_elements_by_tag_name('option')`
@@ -216,7 +245,7 @@ class Scraper(object):
         else:
             print 'no email found\n--------------------'
 
-def set_logger(loglevel, file_mode):
+def set_logger(loglevel, file_mode, path):
     """Sets up logging to a file.
     
     Logging output is appended to the file if it already exists.
@@ -226,14 +255,13 @@ def set_logger(loglevel, file_mode):
         raise ValueError('Invalid log level: ', loglevel)
     logging.basicConfig(format = '%(asctime)s %(levelname)s: %(message)s',
             datefmt = '%I:%M:%S',  # Add %p for AM or PM.
-            filename = 'bc_schools.log',
+            filename = path + region + '.log',
             filemode = file_mode,
             level = numlevel)
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Scrape contact info from British Columbia schools.\n'
-                      'Log saved in bc_schools.log',
+        description='Scrape contact info from Indian schools.',
         epilog='Happy scraping, use with care!')
     parser.add_argument('--log', default='info', dest='loglevel',
                         help='Log level (default: %(default)s)',
@@ -246,7 +274,7 @@ def parse_args():
                         help='Append to the log file instead of overwriting it')
     parser.add_argument('-u', '--unique', action='store_true',
                         help='Output file will contain unique data')
-    parser.add_argument('-o', '--output', type=str, default='bc-schools',
+    parser.add_argument('-o', '--output', type=str, default=region,
                         help='Specify the output filename (default: %(default)s)')
     parser.add_argument('-v', '--version', action='version', version = '%(prog)s 1.0')
     args = parser.parse_args()
@@ -254,25 +282,26 @@ def parse_args():
     return args
 
 def main():
-    print argv
-    print pwd()
-    io.datadir_exists()
-    #args = parse_args()
-    #remove_dupes('bc-schools.csv')
-    """
     args = parse_args()
-    set_logger(args.loglevel, args.filemode)
+    
+    if io.dir_exists('logs'):
+        logpath = io.datapath
+    if io.dir_exists('data'):
+        datapath = io.datapath + args.output
+    else:
+        print 'You need a data directory to continue.'
+        exit(1)
+    
+    set_logger(args.loglevel, args.filemode, logpath)
     logging.info('Started on %s', strftime("%A, %d %B %Y at %I:%M%p"))
     logging.info('Log level = %s, Max seconds to pause = %d, File mode = %s',
                  args.loglevel, args.seconds, args.filemode)
-    scraper = Scraper('http://www.bced.gov.bc.ca/apps/imcl/imclWeb/',
-                      args.seconds, args.output)
+    scraper = Scraper('http://164.100.50.30/SchoolDir/userview.aspx',
+                      args.seconds, datapath)
     scraper.scrape()
+    
     if args.unique:
-        remove_dupes(args.output)
-    """
+        io.remove_dupes(datapath)
 
 if __name__ == '__main__':
-    # Allow for this module to be run as a script (e.g. python bc_schools.py)
-    # Note: This conditional is false when the module is imported.
     main()
