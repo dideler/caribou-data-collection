@@ -6,12 +6,10 @@
 
 import argparse
 import logging
-from sys import argv
-from sys import exit
-from time import strftime
-from time import sleep  # Randomize scraping pattern and give server some slack.
-from random import randint
-from urllib import pathname2url
+import sys
+import time
+import random
+import urllib
 
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
@@ -103,10 +101,10 @@ class Scraper(object):
         # Dynamically create the city URLs and scrape each city.
         for i, city in enumerate(cities):
             if i == 0: continue # First city option is "City", skip it.
-            city_query = '?city={}'.format(pathname2url(city))
+            city_query = '?city={}'.format(urllib.pathname2url(city))
             city_url = self.home_url + city_query
             logging.info("Scraping city %d: %s", i, city)
-            sleep(randint(0, self.seconds)) # Randomly pause between requests.
+            time.sleep(random.randint(0, self.seconds))
             self._browser.get(city_url)
             self.__scrape_schools_in_city(city)
 
@@ -134,7 +132,7 @@ class Scraper(object):
             school_name, school_value = school[0], school[1]
             school_url = self.base_url + school_value
             logging.info("\tScraping school %d: %s", i, school_name)
-            sleep(randint(0, self.seconds)) # Randomly pause between requests.
+            time.sleep(random.randint(0, self.seconds))
             self._browser.get(school_url)
             self.__extract_contact_info(school_name, city)
 
@@ -258,7 +256,7 @@ def parse_args():
                         help='Specify the output filename (default: %(default)s)')
     parser.add_argument('-v', '--version', action='version', version = '%(prog)s 1.0')
     args = parser.parse_args()
-    args.output = args.output.replace('.csv', '') + strftime('-%b-%d-%Y.csv')
+    args.output = args.output.replace('.csv', '') + time.strftime('-%b-%d-%Y.csv')
     return args
 
 def main():
@@ -270,10 +268,10 @@ def main():
         datapath = io.datapath + args.output
     else:
         print 'You need a data directory to continue.'
-        exit(1)
+        sys.exit(1)
     
     set_logger(args.loglevel, args.filemode, logpath)
-    logging.info('Started on %s', strftime("%A, %d %B %Y at %I:%M%p"))
+    logging.info('Started on %s', time.strftime("%A, %d %B %Y at %I:%M%p"))
     logging.info('Log level = %s, Max seconds to pause = %d, File mode = %s',
                  args.loglevel, args.seconds, args.filemode)
     scraper = Scraper('http://www.bced.gov.bc.ca/apps/imcl/imclWeb/',
