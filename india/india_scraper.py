@@ -6,6 +6,7 @@
 
 import argparse
 import logging
+import math
 import random
 import string
 import sys
@@ -99,7 +100,8 @@ class Scraper(object):
                      query)
         
         num_results = self._browser.find_element_by_id('lbltot').text
-        logging.info("Found %s schools", num_results)
+        logging.info("Found %s schools (%d pages)", num_results,
+                     math.ceil(int(num_results) / 25.0))
 
         self.__iterate_results()
 
