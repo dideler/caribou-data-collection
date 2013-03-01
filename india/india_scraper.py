@@ -6,13 +6,11 @@
 
 import argparse
 import logging
-from random import randint
-from string import lowercase
-from sys import argv
-from sys import exit
-from time import strftime
-from time import sleep  # Randomize scraping pattern and give server some slack.
-from urllib import pathname2url
+import random
+import string
+import sys
+import time
+import urllib
 
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
@@ -73,36 +71,48 @@ class Scraper(object):
     def scrape(self):
         """Scrapes website and extracts the contact info of all schools."""
         self._browser = webdriver.Chrome()
+
+        for letter in 'qz':#string.lowercase:
+            self.__search_for(letter)
+        
+        self._browser.close()
+
+    def __search_for(self, query):
+        """Search for the query."""
+
+        # (Re)visit the URL to reset page history. Otherwise a new search
+        # will start from the old page number instead of the first results page.
         self._browser.get(self.base_url)
         assert 'AllView' in self._browser.title, 'Wrong webpage.'
         
-        # NOTE: The page reloads on every option click. Thus the element will
-        #       no longer exist in cache and Selenium will complain and crash.
-        #       A workaround is to re-find the element after every page reload.
-
-        self.__search_by_alphabet()
-        self._browser.close()
-
-    def __search_by_alphabet(self):
-        """Search for schools by querying each letter of the alphabet."""
-
         # Select the 'Keyword wise' radiobox.
         self._browser.find_element_by_id('optlist_0').click()
 
-        for letter in lowercase:
-            # Find the search box, clear it, and enter the next letter.
-            search_box = self._browser.find_element_by_id('keytext')
-            search_box.clear()
-            search_box.send_keys(letter)
+        # Find the search box, clear it, and enter the query text.
+        search_box = self._browser.find_element_by_id('keytext')
+        search_box.clear()
+        search_box.send_keys(query)
+        
+        # Find the search submit button and click it.
+        self._browser.find_element_by_id('search').click()
+        logging.info("Searching for schools with '%s' in the name or address",
+                     query)
+        
+        num_results = self._browser.find_element_by_id('lbltot').text
+        logging.info("Found %s schools", num_results)
 
-            # Find the search submit button and click it.
-            self._browser.find_element_by_id('search').click()
+        self.__iterate_results()
 
-            logging.info("Searching for schools with the letter '%s' in the "
-                         "name or address.", letter)
-            #  next_button = b.find_element_by_id('Button1')
-            #  next_button.get_attribute('value') == 'Next >>'
-            #  next_button.is_enabled()
+    def __iterate_results(self):
+        page_num = 1
+        while True:
+            logging.info("Scraping page #%d", page_num)
+            next_button = self._browser.find_element_by_id('Button1')
+            assert 'next' in next_button.get_attribute('value').lower(), 'Could not find Next button.'
+            if not next_button.is_enabled():
+                break
+            page_num += 1
+            next_button.click()
 
     def __scrape_cities(self):
         # `Select` is more efficient than `find_elements_by_tag_name('option')`
@@ -123,10 +133,10 @@ class Scraper(object):
         # Dynamically create the city URLs and scrape each city.
         for i, city in enumerate(cities):
             if i == 0: continue # First city option is "City", skip it.
-            city_query = '?city={}'.format(pathname2url(city))
+            city_query = '?city={}'.format(urllib.pathname2url(city))
             city_url = self.home_url + city_query
             logging.info("Scraping city %d: %s", i, city)
-            sleep(randint(0, self.seconds)) # Randomly pause between requests.
+            time.sleep(random.randint(0, self.seconds))
             self._browser.get(city_url)
             self.__scrape_schools_in_city(city)
 
@@ -154,7 +164,7 @@ class Scraper(object):
             school_name, school_value = school[0], school[1]
             school_url = self.base_url + school_value
             logging.info("\tScraping school %d: %s", i, school_name)
-            sleep(randint(0, self.seconds)) # Randomly pause between requests.
+            time.sleep(random.randint(0, self.seconds))
             self._browser.get(school_url)
             self.__extract_contact_info(school_name, city)
 
@@ -278,7 +288,7 @@ def parse_args():
                         help='Specify the output filename (default: %(default)s)')
     parser.add_argument('-v', '--version', action='version', version = '%(prog)s 1.0')
     args = parser.parse_args()
-    args.output = args.output.replace('.csv', '') + strftime('-%b-%d-%Y.csv')
+    args.output = args.output.replace('.csv', '') + time.strftime('-%b-%d-%Y.csv')
     return args
 
 def main():
@@ -290,10 +300,10 @@ def main():
         datapath = io.datapath + args.output
     else:
         print 'You need a data directory to continue.'
-        exit(1)
+        sys.exit(1)
     
     set_logger(args.loglevel, args.filemode, logpath)
-    logging.info('Started on %s', strftime("%A, %d %B %Y at %I:%M%p"))
+    logging.info('Started on %s', time.strftime("%A, %d %B %Y at %I:%M%p"))
     logging.info('Log level = %s, Max seconds to pause = %d, File mode = %s',
                  args.loglevel, args.seconds, args.filemode)
     scraper = Scraper('http://164.100.50.30/SchoolDir/userview.aspx',
