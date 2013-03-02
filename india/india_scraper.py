@@ -32,6 +32,18 @@ except ImportError:
 
 """Collects contact info from schools in India.
 
+This is a slow scraper because of how the directory of schools is set up.
+The algorithm is as:
+
+    go to home page
+    get list of states and values
+    for every state
+        go to state search  # this is necessary to reset history
+        for every letter in the alphabet
+            search letter
+            for every result page
+                scrape info
+
 There is an option to specify a maximum time (in seconds) to wait between page
 requests. This option is useful for randomizing the scraping patterns, which
 makes it less obvious that the scraping is performed by a bot. It also reduces
@@ -65,6 +77,7 @@ class Scraper(object):
         self.seconds = secs
         self.output = out
         self._browser = None
+        self.states_and_values = None
         #self._tablerow_xpath = '/html/body/div/table[3]/tbody/tr[1]/td[4]/table[2]/tbody/tr'
         #self._leftcol_xpath = self._tablerow_xpath + '/td[1]'
         #self._rightcol_xpath = self._tablerow_xpath + '/td[3]'
@@ -73,16 +86,16 @@ class Scraper(object):
     def scrape(self):
         """Scrapes website and extracts the contact info of all schools."""
         self._browser = webdriver.Chrome()
+        self.states_and_values = self.__get_states_and_values()
 
-        for letter in 'qz':#string.lowercase:
-            self.__search_for(letter)
+        # TODO: start point of execution
         
         self._browser.close()
 
     def __goto_state_search(self):
         """Goes to the "State wise" search.
 
-        Here you can search by state and keyword.
+        From here you can search by state and keyword.
         """
         # (Re)visit the URL to reset page history. Otherwise a new search
         # will start from the old page number instead of the first results page.
@@ -91,27 +104,44 @@ class Scraper(object):
         
         # Select the 'State' radiobox.
         self._browser.find_element_by_id('optlist_2').click()
-    
-    def __get_states_and_values(self):
-        """Returns an ordered dictionary of states and their values.
-
-        Data taken from the "Select A State" dropdown list.
-        Dictionary sorted by state name (which is the key).
-        """
-        self.__goto_state_search()
-        
+   
+    def __get_state_list(self):
         try:  # `Select` is more efficient than `find_elements_by_tag_name()`
-            state_list = Select(self._browser.find_element_by_id('ddlitem'))
+            return Select(self._browser.find_element_by_id('ddlitem'))
         except UnexpectedTagNameException:
             logging.critical('ddlitem element is not a SELECT tag.')
         except StaleElementReferenceException:
             logging.critical('ddlitem element does not exist.')
 
+    def __get_states_and_values(self):
+        """Returns an ordered dictionary of states and their values.
+
+        Data taken from the "Select A State" dropdown list.
+        Dictionary sorted by state name (which is the key).
+        This method should only be ran once.
+        """
+        self.__goto_state_search()
+        state_list = self.__get_state_list() 
         states_and_values = {str(option.text).title():
                              str(option.get_attribute('value')) for option in
                              state_list.options[1:]} # 1st option is junk.
         logging.info("Found %d states", len(states_and_values))
         return collections.OrderedDict(sorted(states_and_values.items()))
+
+    def __iterate_states(self):
+        """Iterates through all the states."""
+
+        # TODO
+        # goto state search
+        # get select element for state list
+        #
+        for state, value in self.states_and_values.iteritems():
+            logging.info("Scraping state %s", state)
+            state_list.select_by_value(value)
+            # TODO: search for every letter
+            for letter in 'qz':#string.lowercase:
+                self.__search_for(letter)
+            
 
     def __search_for(self, query):
         """Search for the given query.
@@ -144,6 +174,7 @@ class Scraper(object):
         page_num = 1
         while True:
             logging.info("Scraping page #%d", page_num)
+            # TODO: scrape results --> __scrape_schools()
             next_button = self._browser.find_element_by_id('Button1')
             assert 'next' in next_button.get_attribute('value').lower(), 'Could not find Next button.'
             if not next_button.is_enabled():
