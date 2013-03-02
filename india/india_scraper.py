@@ -5,6 +5,7 @@
 # School contact info to be used for the Caribou Cup Mathematics Competition.
 
 import argparse
+import collections
 import logging
 import math
 import random
@@ -78,16 +79,50 @@ class Scraper(object):
         
         self._browser.close()
 
-    def __search_for(self, query):
-        """Search for the query."""
+    def __goto_state_search(self):
+        """Goes to the "State wise" search.
 
+        Here you can search by state and keyword.
+        """
         # (Re)visit the URL to reset page history. Otherwise a new search
         # will start from the old page number instead of the first results page.
         self._browser.get(self.base_url)
         assert 'AllView' in self._browser.title, 'Wrong webpage.'
         
-        # Select the 'Keyword wise' radiobox.
-        self._browser.find_element_by_id('optlist_0').click()
+        # Select the 'State' radiobox.
+        self._browser.find_element_by_id('optlist_2').click()
+    
+    def __get_states_and_values(self):
+        """Returns an ordered dictionary of states and their values.
+
+        Data taken from the "Select A State" dropdown list.
+        Dictionary sorted by state name (which is the key).
+        """
+        self.__goto_state_search()
+        
+        try:  # `Select` is more efficient than `find_elements_by_tag_name()`
+            state_list = Select(self._browser.find_element_by_id('ddlitem'))
+        except UnexpectedTagNameException:
+            logging.critical('ddlitem element is not a SELECT tag.')
+        except StaleElementReferenceException:
+            logging.critical('ddlitem element does not exist.')
+
+        states_and_values = {str(option.text).title():
+                             str(option.get_attribute('value')) for option in
+                             state_list.options[1:]} # 1st option is junk.
+        logging.info("Found %d states", len(states_and_values))
+        return collections.OrderedDict(sorted(states_and_values.items()))
+
+    def __search_for(self, query):
+        """Search for the given query.
+        
+        Searching is done by state and then by keyword.
+        The reason for searching by state is because the state information is
+        sometimes left out from the address, so now we can get the state info.
+        """
+
+        # TODO: are you revisting the home URL to reset page history?
+        
 
         # Find the search box, clear it, and enter the query text.
         search_box = self._browser.find_element_by_id('keytext')
@@ -115,6 +150,11 @@ class Scraper(object):
                 break
             page_num += 1
             next_button.click()
+
+    def __scrape_schools(self):
+        tables = self._browser.find_elements_by_xpath('//*[@id="T1"]/tbody/tr/td/table')
+        for info in tables:
+            print info.text # Still lots of cleaning up to do
 
     def __scrape_cities(self):
         # `Select` is more efficient than `find_elements_by_tag_name('option')`
