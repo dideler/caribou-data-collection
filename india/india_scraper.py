@@ -164,7 +164,7 @@ class Scraper(object):
         logging.info("Searching for schools with '%s' in the name or address",
                      query)
         
-        num_results = self._browser.find_element_by_id('lbltot').text
+        num_results = self._browser.find_element_by_id('tot').text
         logging.info("Found %s schools (%d pages)", num_results,
                      math.ceil(int(num_results) / 25.0))
 
