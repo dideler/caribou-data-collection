@@ -2,12 +2,13 @@ Collects the following contact information from publicly listed schools [1] in
 British Columba, Canada, and writes it to a comma-separated value file so it's
 easy to work with.
 
+- school id = null
 - school name
 - school address
 - city
 - province
 - postal code
-- school board
+- school board = null
 - contact name
 - contact phone number
 - contact position
