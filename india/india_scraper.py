@@ -87,13 +87,11 @@ class Scraper(object):
         """Scrapes website and extracts the contact info of all schools."""
         self._browser = webdriver.Chrome()
         self.states_and_values = self.__get_states_and_values()
-
-        # TODO: start point of execution
-        
+        self.__iterate_states_and_search()
         self._browser.close()
 
-    def __goto_state_search(self):
-        """Goes to the "State wise" search.
+    def __goto_state_search_and_get_state_list(self):
+        """Goes to the "State wise" search and returns the State select element.
 
         From here you can search by state and keyword.
         """
@@ -104,15 +102,14 @@ class Scraper(object):
         
         # Select the 'State' radiobox.
         self._browser.find_element_by_id('optlist_2').click()
-   
-    def __get_state_list(self):
+        
         try:  # `Select` is more efficient than `find_elements_by_tag_name()`
             return Select(self._browser.find_element_by_id('ddlitem'))
         except UnexpectedTagNameException:
             logging.critical('ddlitem element is not a SELECT tag.')
         except StaleElementReferenceException:
             logging.critical('ddlitem element does not exist.')
-
+   
     def __get_states_and_values(self):
         """Returns an ordered dictionary of states and their values.
 
@@ -120,23 +117,19 @@ class Scraper(object):
         Dictionary sorted by state name (which is the key).
         This method should only be ran once.
         """
-        self.__goto_state_search()
-        state_list = self.__get_state_list() 
+        state_list = self.__goto_state_search_and_get_state_list()
         states_and_values = {str(option.text).title():
                              str(option.get_attribute('value')) for option in
                              state_list.options[1:]} # 1st option is junk.
         logging.info("Found %d states", len(states_and_values))
         return collections.OrderedDict(sorted(states_and_values.items()))
 
-    def __iterate_states(self):
-        """Iterates through all the states."""
+    def __iterate_states_and_search(self):
+        """Iterates through all the states and performs a search on each."""
 
-        # TODO
-        # goto state search
-        # get select element for state list
-        #
         for state, value in self.states_and_values.iteritems():
             logging.info("Scraping state %s", state)
+            state_list = self.__goto_state_search_and_get_state_list()
             state_list.select_by_value(value)
             # TODO: search for every letter
             for letter in 'qz':#string.lowercase:
@@ -144,15 +137,12 @@ class Scraper(object):
             
 
     def __search_for(self, query):
-        """Search for the given query.
+        """Searches for the given query.
         
         Searching is done by state and then by keyword.
         The reason for searching by state is because the state information is
         sometimes left out from the address, so now we can get the state info.
         """
-
-        # TODO: are you revisting the home URL to reset page history?
-        
 
         # Find the search box, clear it, and enter the query text.
         search_box = self._browser.find_element_by_id('keytext')
@@ -171,6 +161,7 @@ class Scraper(object):
         self.__iterate_results()
 
     def __iterate_results(self):
+        """Iterates through the pages of results."""
         page_num = 1
         while True:
             logging.info("Scraping page #%d", page_num)
