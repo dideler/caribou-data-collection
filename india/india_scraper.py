@@ -19,6 +19,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import UnexpectedTagNameException
+from selenium.common.exceptions import NoSuchElementException
 
 try:
     from utils import io
@@ -154,18 +155,27 @@ class Scraper(object):
         logging.info("Searching for schools with '%s' in the name or address",
                      query)
         
-        num_results = self._browser.find_element_by_id('tot').text
-        logging.info("Found %s schools (%d pages)", num_results,
-                     math.ceil(int(num_results) / 25.0))
+        try:
+            num_results = self._browser.find_element_by_id('tot').text
+            logging.info("Found %s schools (%d %s)", num_results,
+                         math.ceil(int(num_results) / 25.0), 'page' if
+                         num_results == 1 else 'pages')
+        except NoSuchElementException:
+            logging.info("Found 0 schools")
+            #self._browser.find_element_by_id('label').text == 'No Record Found For This KeyWord'
+            return
 
         self.__iterate_results()
 
     def __iterate_results(self):
-        """Iterates through the pages of results."""
+        """Iterates through the pages of results and scrapes them.
+        
+        Stops when the Next button is disabled (i.e. on the last page).
+        """
         page_num = 1
         while True:
             logging.info("Scraping page #%d", page_num)
-            # TODO: scrape results --> __scrape_schools()
+            self.__scrape_schools() # NOTE: currently only prints
             next_button = self._browser.find_element_by_id('Button1')
             assert 'next' in next_button.get_attribute('value').lower(), 'Could not find Next button.'
             if not next_button.is_enabled():
@@ -174,6 +184,10 @@ class Scraper(object):
             next_button.click()
 
     def __scrape_schools(self):
+        """Scrapes the contact info of the schools.
+
+        TODO
+        """
         tables = self._browser.find_elements_by_xpath('//*[@id="T1"]/tbody/tr/td/table')
         for info in tables:
             print info.text # Still lots of cleaning up to do
