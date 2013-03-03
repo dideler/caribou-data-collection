@@ -152,16 +152,17 @@ class Scraper(object):
         
         # Find the search submit button and click it.
         self._browser.find_element_by_id('search').click()
-        logging.info("Searching for schools with '%s' in the name or address",
+        logging.info("\tSearching for schools with '%s' in the name or address",
                      query)
         
         try:
-            num_results = self._browser.find_element_by_id('tot').text
-            logging.info("Found %s schools (%d %s)", num_results,
-                         math.ceil(int(num_results) / 25.0), 'page' if
-                         num_results == 1 else 'pages')
+            num_results = int(self._browser.find_element_by_id('tot').text)
+            num_pages = math.ceil(num_results / 25.0)
+            logging.info("\tFound %d %s (%d %s)", num_results,
+                         "school" if num_results == 1 else "schools", num_pages,
+                         "page" if num_pages == 1 else "pages")
         except NoSuchElementException:
-            logging.info("Found 0 schools")
+            logging.info("\tFound 0 schools")
             #self._browser.find_element_by_id('label').text == 'No Record Found For This KeyWord'
             return
 
@@ -174,7 +175,7 @@ class Scraper(object):
         """
         page_num = 1
         while True:
-            logging.info("Scraping page #%d", page_num)
+            logging.info("\t\tScraping page %d", page_num)
             self.__scrape_schools() # NOTE: currently only prints
             next_button = self._browser.find_element_by_id('Button1')
             assert 'next' in next_button.get_attribute('value').lower(), 'Could not find Next button.'
@@ -187,6 +188,7 @@ class Scraper(object):
         """Scrapes the contact info of the schools.
 
         TODO
+        - timezone = "Asia/Kolkata"
         """
         tables = self._browser.find_elements_by_xpath('//*[@id="T1"]/tbody/tr/td/table')
         for info in tables:
