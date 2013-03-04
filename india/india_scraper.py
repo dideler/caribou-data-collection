@@ -79,10 +79,7 @@ class Scraper(object):
         self.output = out
         self._browser = None
         self.states_and_values = None
-        #self._tablerow_xpath = '/html/body/div/table[3]/tbody/tr[1]/td[4]/table[2]/tbody/tr'
-        #self._leftcol_xpath = self._tablerow_xpath + '/td[1]'
-        #self._rightcol_xpath = self._tablerow_xpath + '/td[3]'
-        #self._email_xpath = self._rightcol_xpath + '/a'
+        self._current_state = None
 
     def scrape(self):
         """Scrapes website and extracts the contact info of all schools."""
@@ -130,6 +127,7 @@ class Scraper(object):
 
         for state, value in self.states_and_values.iteritems():
             logging.info("Scraping state %s", state)
+            self._current_state = state
             state_list = self.__goto_state_search_and_get_state_list()
             state_list.select_by_value(value)
             # TODO: search for every letter
@@ -185,14 +183,75 @@ class Scraper(object):
             next_button.click()
 
     def __scrape_schools(self):
-        """Scrapes the contact info of the schools.
+        """Scrapes the contact info of the schools."""
+        school_id = 'null'
+        school_name = None
+        address = None
+        city = None
+        state = self._current_state
+        postal_code = None
+        schoolboard = 'null'
+        contact_name = None
+        phone = None  # http://en.wikipedia.org/wiki/Telephone_numbers_in_India
+        contact_position = 'Principal'
+        email = None
+        timezone = 'Asia/Kolkata'
+        country = 'IN'
 
-        TODO
-        - timezone = "Asia/Kolkata"
-        """
         tables = self._browser.find_elements_by_xpath('//*[@id="T1"]/tbody/tr/td/table')
-        for info in tables:
-            print info.text # Still lots of cleaning up to do
+        for table in tables[1:]: # Skip first element, it's label junk.
+            school_data = table.text.split('\n') # List of school data.
+            school_name = school_data[2].split(':')[1].strip().title()
+            email = school_data[6].split(':')[1].strip().lower()
+            # TODO: consider not using 'continue', e.g. if email:
+            if not email:
+                print 'No email. Skipped: ', school_name
+                continue
+            contact_name = school_data[3].split(':')[1].strip().title() # May contain spacing issues.
+            phone = school_data[5].split(':')[1].replace(' ', '').replace(',', ' ').strip()
+            if not phone or phone.isspace():
+                phone = 'null'
+            # TODO
+            # address
+            # city
+            # postal code
+            
+            # 0 1
+            # 1 Affiliation No.130297
+            # 2 Name: Azaan International School
+            # 3 Head/Principal Name:Mrs.Perween Sultana Shikoh
+            # 4 Address: 9-4-136, Seven Tombs road, Tolichowki, Hyderabad ,500008
+            # 5 Phone No:,04064509370,04024413483
+            # 6 Email:azaan.cbse@gmail.com
+
+        
+            # Because this file is constantly being opened and closed for every
+            # entry, the filemode HAS to be append. If the performance suffers
+            # too greatly, open the file before scraping and close it when
+            # completed, though this will complicate error handling.
+            with open(self.output, 'a') as csv_file:
+                csv_file.write('{},{},{},{},{},{},{},{},{},{},{},{},{}\n'.format(
+                                school, name, address, city, province,
+                                postal_code, schoolboard, contact, phone,
+                                position, email, timezone, country))
+
+            print ('school id = {}\n'
+                   'school name = {}\n'
+                   'address = {}\n'
+                   'city = {}\n'
+                   'province = {}\n'
+                   'postal code = {}\n'
+                   'schoolboard = {}\n'
+                   'contact name = {}\n'
+                   'contact phone = {}\n'
+                   'contact position = {}\n'
+                   'contact email = {}\n'
+                   'timezone = {}\n'
+                   'country = {}').format(school, name, address, city, province,
+                                          postal_code, schoolboard, contact,
+                                          phone, position, email, timezone,
+                                          country)
+
 
     def __scrape_cities(self):
         # `Select` is more efficient than `find_elements_by_tag_name('option')`
