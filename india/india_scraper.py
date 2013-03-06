@@ -9,6 +9,7 @@ import collections
 import logging
 import math
 import random
+import re
 import string
 import sys
 import time
@@ -34,16 +35,9 @@ except ImportError:
 """Collects contact info from schools in India.
 
 This is a slow scraper because of how the directory of schools is set up.
-The algorithm is as:
+The high-level algorithm is as:
 
-    go to home page
-    get list of states and values
-    for every state
-        go to state search  # this is necessary to reset history
-        for every letter in the alphabet
-            search letter
-            for every result page
-                scrape info
+    TODO
 
 There is an option to specify a maximum time (in seconds) to wait between page
 requests. This option is useful for randomizing the scraping patterns, which
@@ -132,6 +126,7 @@ class Scraper(object):
             state_list.select_by_value(value)
             # TODO: search for every letter
             for letter in 'qz':#string.lowercase:
+                # TODO: go to state search?
                 self.__search_for(letter)
             
 
@@ -164,7 +159,7 @@ class Scraper(object):
             #self._browser.find_element_by_id('label').text == 'No Record Found For This KeyWord'
             return
 
-        self.__iterate_results()
+        self.__iterate_results() # TODO: pass num_pages so it can be used as loop criteria
 
     def __iterate_results(self):
         """Iterates through the pages of results and scrapes them.
@@ -187,7 +182,7 @@ class Scraper(object):
         school_id = 'null'
         school_name = None
         address = None
-        city = None
+        city = 'N/A'
         state = self._current_state
         postal_code = None
         schoolboard = 'null'
@@ -201,39 +196,50 @@ class Scraper(object):
         tables = self._browser.find_elements_by_xpath('//*[@id="T1"]/tbody/tr/td/table')
         for table in tables[1:]: # Skip first element, it's label junk.
             school_data = table.text.split('\n') # List of school data.
+            # Example of school_data contents:
+            # [0] 1
+            # [1] Affiliation No.130297
+            # [2] Name: Azaan International School
+            # [3] Head/Principal Name:Mrs.Perween Sultana Shikoh
+            # [4] Address: 9-4-136, Seven Tombs road, Tolichowki, Hyderabad ,500008
+            # [5] Phone No:,04064509370,04024413483
+            # [6] Email:azaan.cbse@gmail.com
             school_name = school_data[2].split(':')[1].strip().title()
             email = school_data[6].split(':')[1].strip().lower()
-            # TODO: consider not using 'continue', e.g. if email:
             if not email:
                 print 'No email. Skipped: ', school_name
                 continue
-            contact_name = school_data[3].split(':')[1].strip().title() # May contain spacing issues.
+
+            # Note that contact name may contain spacing issues.
+            contact_name = school_data[3].split(':')[1].strip().title()
             phone = school_data[5].split(':')[1].replace(' ', '').replace(',', ' ').strip()
             if not phone or phone.isspace():
                 phone = 'null'
-            # TODO
-            # address
-            # city
-            # postal code
-            
-            # 0 1
-            # 1 Affiliation No.130297
-            # 2 Name: Azaan International School
-            # 3 Head/Principal Name:Mrs.Perween Sultana Shikoh
-            # 4 Address: 9-4-136, Seven Tombs road, Tolichowki, Hyderabad ,500008
-            # 5 Phone No:,04064509370,04024413483
-            # 6 Email:azaan.cbse@gmail.com
-
-        
+           
+            # I thought about adding .replace(state, '') to remove the state
+            # from the address, but some places have part of the state name as
+            # a legitimate part of their address, like New Delhi in Delhi.
+            full_address = school_data[4].split(':')[1].title()
+            address_list = re.split('(,[0-9]{6})', full_address) # Split by postal code.
+            address = address_list[0].strip()
+            if address.endswith(','):  # Remove trailing comma if exists.
+                address = address[:-1]
+            try:
+                postal_code = address_list[1][1:]
+            except IndexError:  # Some addresses do not contain a postal code.
+                postal_code = 'N/A'
+           
             # Because this file is constantly being opened and closed for every
             # entry, the filemode HAS to be append. If the performance suffers
             # too greatly, open the file before scraping and close it when
             # completed, though this will complicate error handling.
+            """
             with open(self.output, 'a') as csv_file:
                 csv_file.write('{},{},{},{},{},{},{},{},{},{},{},{},{}\n'.format(
                                 school, name, address, city, province,
                                 postal_code, schoolboard, contact, phone,
                                 position, email, timezone, country))
+            """
 
             print ('school id = {}\n'
                    'school name = {}\n'
@@ -247,11 +253,10 @@ class Scraper(object):
                    'contact position = {}\n'
                    'contact email = {}\n'
                    'timezone = {}\n'
-                   'country = {}').format(school, name, address, city, province,
-                                          postal_code, schoolboard, contact,
-                                          phone, position, email, timezone,
-                                          country)
-
+                   'country = {}').format(school_id, school_name, address, city,
+                                          state, postal_code, schoolboard,
+                                          contact_name, phone, contact_position,
+                                          email, timezone, country)
 
     def __scrape_cities(self):
         # `Select` is more efficient than `find_elements_by_tag_name('option')`
