@@ -127,6 +127,7 @@ class Scraper(object):
             # TODO: search for every letter
             for letter in 'qz':#string.lowercase:
                 # TODO: go to state search?
+                time.sleep(random.randint(0, self.seconds))
                 self.__search_for(letter)
             
 
@@ -168,6 +169,7 @@ class Scraper(object):
         """
         page_num = 1
         while True:
+            time.sleep(random.randint(0, self.seconds))
             logging.info("\t\tScraping page %d", page_num)
             self.__scrape_schools() # NOTE: currently only prints
             next_button = self._browser.find_element_by_id('Button1')
@@ -207,7 +209,7 @@ class Scraper(object):
             school_name = school_data[2].split(':')[1].strip().title()
             email = school_data[6].split(':')[1].strip().lower()
             if not email:
-                print 'No email. Skipped: ', school_name
+                print 'No email. Skipped: ', school_name, '\n--------------------'
                 continue
 
             # Note that contact name may contain spacing issues.
@@ -257,6 +259,7 @@ class Scraper(object):
                                           state, postal_code, schoolboard,
                                           contact_name, phone, contact_position,
                                           email, timezone, country)
+            print '--------------------'
 
     def __scrape_cities(self):
         # `Select` is more efficient than `find_elements_by_tag_name('option')`
