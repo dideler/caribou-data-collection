@@ -305,7 +305,7 @@ def parse_args():
     parser.add_argument('-u', '--unique', action='store_true',
                         help='Output file will contain unique data')
     parser.add_argument('-o', '--output', type=str, default=region,
-                        help='Specify the output filename (default: %(default)s)')
+                        help='Specify the output filename (default: %(default)s.csv)')
     parser.add_argument('-v', '--version', action='version', version = '%(prog)s 1.0')
     args = parser.parse_args()
     args.output = args.output.replace('.csv', '') + time.strftime('-%b-%d-%Y.csv')
