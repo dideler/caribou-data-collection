@@ -37,7 +37,20 @@ except ImportError:
 This is a slow scraper because of how the directory of schools is set up.
 The high-level algorithm is as:
 
-    TODO
+    http://164.100.50.30/SchoolDir/userview.aspx
+
+High-level algorithm:
+
+    go to home page
+    click on state search
+    get list of states and their html values
+    for every state in the list
+        for every letter in the alphabet
+            go to state search page and select current state
+            search letter
+            for every page of results
+                for every school on current page
+                    extract, parse, and clean data 
 
 There is an option to specify a maximum time (in seconds) to wait between page
 requests. This option is useful for randomizing the scraping patterns, which
@@ -128,12 +141,11 @@ class Scraper(object):
         for state, value in self.states_and_values.iteritems():
             logging.info("Scraping state %s", state)
             self._current_state = state
-            # TODO: search for every letter
-            for letter in 'qz':#string.lowercase:
+            for letter in string.lowercase:
                 # Reset search, otherwise current search will start from
                 # the page number that the last search finished on.
                 self.__goto_state_search_and_select_state(value)
-                time.sleep(random.randint(0, self.seconds))
+                time.sleep(random.randint(0, self.seconds)) # Pause between letter searches.
                 self.__search_for(letter)
             
 
@@ -174,7 +186,7 @@ class Scraper(object):
         Stops when the Next button is disabled (i.e. on the last page).
         """
         for page_num in xrange(1, int(num_pages) + 1):
-            time.sleep(random.randint(0, self.seconds))
+            time.sleep(random.randint(0, self.seconds)) # Pause between pages.
             logging.info("\t\tScraping page %d", page_num)
             self.__scrape_schools()
             next_button = self._browser.find_element_by_id('Button1')
