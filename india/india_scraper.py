@@ -173,7 +173,7 @@ class Scraper(object):
         
         Stops when the Next button is disabled (i.e. on the last page).
         """
-        for page_num in xrange(1, num_pages+1):
+        for page_num in xrange(1, int(num_pages) + 1):
             time.sleep(random.randint(0, self.seconds))
             logging.info("\t\tScraping page %d", page_num)
             self.__scrape_schools()
@@ -210,14 +210,14 @@ class Scraper(object):
             # [4] Address: 9-4-136, Seven Tombs road, Tolichowki, Hyderabad ,500008
             # [5] Phone No:,04064509370,04024413483
             # [6] Email:azaan.cbse@gmail.com
-            school_name = school_data[2].split(':')[1].strip().title()
+            school_name = school_data[2].split(':')[1].strip().title().encode('ascii', 'ignore')
             email = school_data[6].split(':')[1].strip().lower()
             if not email:
                 print 'No email. Skipped: ', school_name, '\n--------------------'
                 continue
 
             # Note that contact name may contain spacing issues.
-            contact_name = school_data[3].split(':')[1].strip().title()
+            contact_name = school_data[3].split(':')[1].strip().title().encode('ascii', 'ignore')
             phone = school_data[5].split(':')[1].replace(' ', '').replace(',', ' ').strip()
             if not phone or phone.isspace():
                 phone = 'null'
@@ -225,7 +225,7 @@ class Scraper(object):
             # I thought about adding .replace(state, '') to remove the state
             # from the address, but some places have part of the state name as
             # a legitimate part of their address, like New Delhi in Delhi.
-            full_address = school_data[4].split(':')[1].title()
+            full_address = school_data[4].split(':')[1].title().encode('ascii', 'ignore')
             address_list = re.split('(,[0-9]{6})', full_address) # Split by postal code.
             address = address_list[0].strip()
             if address.endswith(','):  # Remove trailing comma if exists.
