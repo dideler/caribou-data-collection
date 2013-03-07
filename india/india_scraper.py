@@ -82,6 +82,12 @@ class Scraper(object):
         self.__iterate_states_and_search()
         self._browser.close()
 
+    def __goto_state_search_and_select_state(self, value):
+        """Goes to the "State wise" search and selects the given state."""
+        self._browser.get(self.base_url)
+        self._browser.find_element_by_id('optlist_2').click()
+        Select(self._browser.find_element_by_id('ddlitem')).select_by_value(value)
+
     def __goto_state_search_and_get_state_list(self):
         """Goes to the "State wise" search and returns the State select element.
 
@@ -122,11 +128,11 @@ class Scraper(object):
         for state, value in self.states_and_values.iteritems():
             logging.info("Scraping state %s", state)
             self._current_state = state
-            state_list = self.__goto_state_search_and_get_state_list()
-            state_list.select_by_value(value)
             # TODO: search for every letter
             for letter in 'qz':#string.lowercase:
-                # TODO: go to state search?
+                # Reset search, otherwise current search will start from
+                # the page number that the last search finished on.
+                self.__goto_state_search_and_select_state(value)
                 time.sleep(random.randint(0, self.seconds))
                 self.__search_for(letter)
             
@@ -160,23 +166,21 @@ class Scraper(object):
             #self._browser.find_element_by_id('label').text == 'No Record Found For This KeyWord'
             return
 
-        self.__iterate_results() # TODO: pass num_pages so it can be used as loop criteria
+        self.__iterate_results(num_pages)
 
-    def __iterate_results(self):
+    def __iterate_results(self, num_pages):
         """Iterates through the pages of results and scrapes them.
         
         Stops when the Next button is disabled (i.e. on the last page).
         """
-        page_num = 1
-        while True:
+        for page_num in xrange(1, num_pages+1):
             time.sleep(random.randint(0, self.seconds))
             logging.info("\t\tScraping page %d", page_num)
-            self.__scrape_schools() # NOTE: currently only prints
+            self.__scrape_schools()
             next_button = self._browser.find_element_by_id('Button1')
             assert 'next' in next_button.get_attribute('value').lower(), 'Could not find Next button.'
-            if not next_button.is_enabled():
+            if not next_button.is_enabled(): # Just to be safe.
                 break
-            page_num += 1
             next_button.click()
 
     def __scrape_schools(self):
@@ -235,7 +239,7 @@ class Scraper(object):
             # entry, the filemode HAS to be append. If the performance suffers
             # too greatly, open the file before scraping and close it when
             # completed, though this will complicate error handling.
-            """
+            """ TODO
             with open(self.output, 'a') as csv_file:
                 csv_file.write('{},{},{},{},{},{},{},{},{},{},{},{},{}\n'.format(
                                 school, name, address, city, province,
