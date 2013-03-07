@@ -225,7 +225,7 @@ class Scraper(object):
             school_name = school_data[2].split(':')[1].strip().title().encode('ascii', 'ignore')
             email = school_data[6].split(':')[1].strip().lower()
             if not email:
-                print 'No email. Skipped: ', school_name, '\n--------------------'
+                logging.debug('\t\t\tSkipped: %s\n\n', school_name)
                 continue
 
             # Note that contact name may contain spacing issues.
@@ -257,23 +257,22 @@ class Scraper(object):
                                 postal_code, schoolboard, contact_name, phone,
                                 contact_position, email, timezone, country))
 
-            print ('school id = {}\n'
-                   'school name = {}\n'
-                   'address = {}\n'
-                   'city = {}\n'
-                   'state = {}\n'
-                   'postal code = {}\n'
-                   'schoolboard = {}\n'
-                   'contact name = {}\n'
-                   'contact phone = {}\n'
-                   'contact position = {}\n'
-                   'contact email = {}\n'
-                   'timezone = {}\n'
-                   'country = {}').format(school_id, school_name, address, city,
-                                          state, postal_code, schoolboard,
-                                          contact_name, phone, contact_position,
-                                          email, timezone, country)
-            print '--------------------'
+            logging.debug(('\t\t\tschool id = {}\n'
+                           '\t\t\tschool name = {}\n'
+                           '\t\t\taddress = {}\n'
+                           '\t\t\tcity = {}\n'
+                           '\t\t\tstate = {}\n'
+                           '\t\t\tpostal code = {}\n'
+                           '\t\t\tschoolboard = {}\n'
+                           '\t\t\tcontact name = {}\n'
+                           '\t\t\tcontact phone = {}\n'
+                           '\t\t\tcontact position = {}\n'
+                           '\t\t\tcontact email = {}\n'
+                           '\t\t\ttimezone = {}\n'
+                           '\t\t\tcountry = {}\n\n').format(
+                               school_id, school_name, address, city, state,
+                               postal_code, schoolboard, contact_name, phone,
+                               contact_position, email, timezone, country))
 
 def set_logger(loglevel, file_mode, path):
     """Sets up logging to a file.
