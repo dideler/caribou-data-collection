@@ -239,19 +239,17 @@ class Scraper(object):
             # entry, the filemode HAS to be append. If the performance suffers
             # too greatly, open the file before scraping and close it when
             # completed, though this will complicate error handling.
-            """ TODO
             with open(self.output, 'a') as csv_file:
                 csv_file.write('{},{},{},{},{},{},{},{},{},{},{},{},{}\n'.format(
-                                school, name, address, city, province,
-                                postal_code, schoolboard, contact, phone,
-                                position, email, timezone, country))
-            """
+                                school_id, school_name, address, city, state,
+                                postal_code, schoolboard, contact_name, phone,
+                                contact_position, email, timezone, country))
 
             print ('school id = {}\n'
                    'school name = {}\n'
                    'address = {}\n'
                    'city = {}\n'
-                   'province = {}\n'
+                   'state = {}\n'
                    'postal code = {}\n'
                    'schoolboard = {}\n'
                    'contact name = {}\n'
