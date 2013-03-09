@@ -121,10 +121,19 @@ class Scraper(object):
             try:
                 return self._browser.find_element_by_id(element_id)
             except NoSuchElementException:
-                time.sleep(secs)
-                self._browser.refresh()
-                secs = math.ceil(secs * 1.8)
-                continue
+                if self._browser.title == 'errmsg':
+                    logging.warning("Servers are facing a temporary technical "
+                                    "problem... Backing up and trying again.")
+                    self._browser.back()
+                    continue
+                else:
+                    logging.warning("Issue finding Next button. Waiting %s "
+                                    "seconds before reloading the page and "
+                                    "retrying.")
+                    time.sleep(secs)
+                    self._browser.refresh()
+                    secs = math.ceil(secs * 1.8)
+                    continue
             break # The page loaded fine, break.
 
     def __goto_state_search_and_select_state(self, value):
@@ -220,7 +229,7 @@ class Scraper(object):
                 logging.info("\tFound 0 schools")
                 return
             except NoSuchElementException:
-                logging.error("\tSearch error, skipping this search")
+                logging.warning("\tSearch failed, skipping this search")
                 return
 
         self.__iterate_results(num_pages)
