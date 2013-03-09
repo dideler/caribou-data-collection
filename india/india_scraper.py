@@ -173,6 +173,7 @@ class Scraper(object):
         for state, value in self.states_and_values.iteritems():
             logging.info("Scraping state %s", state)
             self._current_state = state
+            """
             if state == 'Tamilnadu': # TODO remove after scraping complete
                 for letter in 'tuvwxyz':
                     # Reset search, otherwise current search will start from
@@ -181,14 +182,14 @@ class Scraper(object):
                     time.sleep(random.randint(0, self.seconds)) # Pause between letter searches.
                     self.__search_for(letter)
             else:
-                for letter in string.lowercase:
-                    # Reset search, otherwise current search will start from
-                    # the page number that the last search finished on.
-                    self.__goto_state_search_and_select_state(value)
-                    time.sleep(random.randint(0, self.seconds)) # Pause between letter searches.
-                    self.__search_for(letter)
-            
-
+            """
+            for letter in string.lowercase:
+                # Reset search, otherwise current search will start from
+                # the page number that the last search finished on.
+                self.__goto_state_search_and_select_state(value)
+                time.sleep(random.randint(0, self.seconds)) # Pause between letter searches.
+                self.__search_for(letter)
+        
     def __search_for(self, query):
         """Searches for the given query.
         
