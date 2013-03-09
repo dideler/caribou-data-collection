@@ -106,7 +106,7 @@ class Scraper(object):
     def scrape(self):
         """Scrapes website and extracts the contact info of all schools."""
         self._browser = webdriver.Chrome()
-        self.states_and_values = collections.OrderedDict([('Tamilnadu', '19'), ('Tripura', '20'), ('Uttar Pradesh', '21'), ('Uttaranchal', '35'), ('West Bengal', '24')]) # TODO: change back to self.__get_states_and_values()
+        self.states_and_values = self.__get_states_and_values()
         self.__iterate_states_and_search()
         self._browser.close()
 
@@ -197,9 +197,13 @@ class Scraper(object):
                          "school" if num_results == 1 else "schools", num_pages,
                          "page" if num_pages == 1 else "pages")
         except NoSuchElementException:
-            logging.info("\tFound 0 schools")
-            #self._browser.find_element_by_id('label').text == 'No Record Found For This KeyWord'
-            return
+            try:
+                assert self._browser.find_element_by_id('label').text == 'No Record Found For This KeyWord', 'Unknown error'
+                logging.info("\tFound 0 schools")
+                return
+            except NoSuchElementException:
+                logging.error("\tSearch error, skipping this search")
+                return
 
         self.__iterate_results(num_pages)
 
