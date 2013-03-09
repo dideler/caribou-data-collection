@@ -34,10 +34,8 @@ except ImportError:
 
 """Collects contact info from schools in India.
 
-This is a slow scraper because of how the directory of schools is set up.
-The high-level algorithm is as:
-
-    http://164.100.50.30/SchoolDir/userview.aspx
+This is a pretty slow scraper because of the site's design, which makes it
+difficult to scrape all the content quickly.
 
 High-level algorithm:
 
@@ -70,6 +68,22 @@ Examples:
 
 region = 'india'  # Region/state/province/etc.
 
+# This dictionary is to be used for the file output.
+# Some database tables have a 2-character limit on a state/province column.
+# Note that some of the names used by the school directory are outdated.
+# Source: http://en.wikipedia.org/wiki/States_and_territories_of_India
+state_codes = {
+    'Andaman & Nicobar':'AN', 'Andhra Pradesh':'AP', 'Arunachal Pradesh':'AR',
+    'Assam':'AS', 'Bihar':'BR', 'Chandigarh':'CH', 'Chattisgarh':'CT',
+    'Dadar & Nagar Haveli':'DN', 'Daman & Diu':'DD', 'Delhi':'DL',
+    'Foreign Schools':'??', 'Goa':'GA', 'Gujarat':'GJ', 'Haryana':'HR',
+    'Himachal Pradesh':'HP', 'Jammu & Kashmir':'JK', 'Jharkhand':'JH',
+    'Karnataka':'KA', 'Kerala':'KL', 'Lakshadweep':'LD', 'Madhya Pradesh':'MP',
+    'Maharashtra':'MH', 'Manipur':'MN', 'Meghalaya':'ML', 'Mizoram':'MZ',
+    'Nagaland':'NL', 'Orissa':'OR', 'Pondicherry':'PY', 'Punjab':'PB',
+    'Rajasthan':'RJ', 'Sikkim':'SK', 'Tamilnadu':'TN', 'Tripura':'TR',
+    'Uttar Pradesh':'UP', 'Uttaranchal':'UT', 'West Bengal':'WB'}
+
 class Scraper(object):
     """A scraper that collects contact info of schools in India.
 
@@ -77,6 +91,7 @@ class Scraper(object):
     - base_url: URL of the website that contains the school directories.
     - seconds: Maximum amount of seconds to wait between page requests.
     - output: Output file path that will contain the extracted data.
+    - states_and_values: Dictionary of states and their SELECT value.
     """
 
     def __init__(self, url, secs, out):
@@ -91,7 +106,7 @@ class Scraper(object):
     def scrape(self):
         """Scrapes website and extracts the contact info of all schools."""
         self._browser = webdriver.Chrome()
-        self.states_and_values = self.__get_states_and_values()
+        self.states_and_values = collections.OrderedDict([('Tamilnadu', '19'), ('Tripura', '20'), ('Uttar Pradesh', '21'), ('Uttaranchal', '35'), ('West Bengal', '24')]) # TODO: change back to self.__get_states_and_values()
         self.__iterate_states_and_search()
         self._browser.close()
 
@@ -129,7 +144,7 @@ class Scraper(object):
         This method should only be ran once.
         """
         state_list = self.__goto_state_search_and_get_state_list()
-        states_and_values = {str(option.text).title():
+        states_and_values = {str(option.text).title().strip():
                              str(option.get_attribute('value')) for option in
                              state_list.options[1:]} # 1st option is junk.
         logging.info("Found %d states", len(states_and_values))
@@ -141,12 +156,20 @@ class Scraper(object):
         for state, value in self.states_and_values.iteritems():
             logging.info("Scraping state %s", state)
             self._current_state = state
-            for letter in string.lowercase:
-                # Reset search, otherwise current search will start from
-                # the page number that the last search finished on.
-                self.__goto_state_search_and_select_state(value)
-                time.sleep(random.randint(0, self.seconds)) # Pause between letter searches.
-                self.__search_for(letter)
+            if state == 'Tamilnadu': # TODO remove after scraping complete
+                for letter in 'tuvwxyz':
+                    # Reset search, otherwise current search will start from
+                    # the page number that the last search finished on.
+                    self.__goto_state_search_and_select_state(value)
+                    time.sleep(random.randint(0, self.seconds)) # Pause between letter searches.
+                    self.__search_for(letter)
+            else:
+                for letter in string.lowercase:
+                    # Reset search, otherwise current search will start from
+                    # the page number that the last search finished on.
+                    self.__goto_state_search_and_select_state(value)
+                    time.sleep(random.randint(0, self.seconds)) # Pause between letter searches.
+                    self.__search_for(letter)
             
 
     def __search_for(self, query):
@@ -201,7 +224,7 @@ class Scraper(object):
         school_name = None
         address = None
         city = 'N/A'
-        state = self._current_state
+        state = state_codes[self._current_state]
         postal_code = None
         schoolboard = 'null'
         contact_name = None
@@ -251,11 +274,13 @@ class Scraper(object):
             # entry, the filemode HAS to be append. If the performance suffers
             # too greatly, open the file before scraping and close it when
             # completed, though this will complicate error handling.
+            """
             with open(self.output, 'a') as csv_file:
-                csv_file.write('{},{},{},{},{},{},{},{},{},{},{},{},{}\n'.format(
+                csv_file.write('{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}\n'.format(
                                 school_id, school_name, address, city, state,
                                 postal_code, schoolboard, contact_name, phone,
                                 contact_position, email, timezone, country))
+                                """
 
             logging.debug(('\t\t\tschool id = {}\n'
                            '\t\t\tschool name = {}\n'
