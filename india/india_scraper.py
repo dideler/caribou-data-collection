@@ -305,13 +305,11 @@ class Scraper(object):
             # entry, the filemode HAS to be append. If the performance suffers
             # too greatly, open the file before scraping and close it when
             # completed, though this will complicate error handling.
-            """
             with open(self.output, 'a') as csv_file:
                 csv_file.write('{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}\n'.format(
                                 school_id, school_name, address, city, state,
                                 postal_code, schoolboard, contact_name, phone,
                                 contact_position, email, timezone, country))
-                                """
 
             logging.debug(('\t\t\tschool id = {}\n'
                            '\t\t\tschool name = {}\n'
