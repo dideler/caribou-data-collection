@@ -109,6 +109,23 @@ class Scraper(object):
         self.states_and_values = self.__get_states_and_values()
         self.__iterate_states_and_search()
         self._browser.close()
+            
+
+    def __retry_until_element_found_by_id(self, element_id):
+        """Returns the element if found, otherwise retries.
+
+        Note that each retry is slower than the previous one.
+        """
+        secs = 1
+        while True: # Safety measure in case page doesn't load.
+            try:
+                return self._browser.find_element_by_id(element_id)
+            except NoSuchElementException:
+                time.sleep(secs)
+                self._browser.refresh()
+                secs = math.ceil(secs * 1.8)
+                continue
+            break # The page loaded fine, break.
 
     def __goto_state_search_and_select_state(self, value):
         """Goes to the "State wise" search and selects the given state."""
@@ -216,8 +233,8 @@ class Scraper(object):
             time.sleep(random.randint(0, self.seconds)) # Pause between pages.
             logging.info("\t\tScraping page %d", page_num)
             self.__scrape_schools()
-            next_button = self._browser.find_element_by_id('Button1')
-            assert 'next' in next_button.get_attribute('value').lower(), 'Could not find Next button.'
+            next_button = self.__retry_until_element_found_by_id('Button1')
+            assert 'next' in next_button.get_attribute('value').lower(), 'Found the wrong button.'
             if not next_button.is_enabled(): # Just to be safe.
                 break
             next_button.click()
