@@ -107,6 +107,8 @@ class Scraper(object):
         """Scrapes website and extracts the contact info of all schools."""
         self._browser = webdriver.Chrome()
         self.states_and_values = self.__get_states_and_values()
+        # If you need to resume scraping, assign this dictionary:
+        # collections.OrderedDict([('Andaman & Nicobar', '25'), ('Andhra Pradesh', '1 '), ('Arunachal Pradesh', '22'), ('Assam', '2 '), ('Bihar', '3 '), ('Chandigarh', '26'), ('Chattisgarh', '33'), ('Dadar & Nagar Haveli', '30'), ('Daman & Diu', '31'), ('Delhi', '27'), ('Foreign Schools', '50'), ('Goa', '28'), ('Gujarat', '4 '), ('Haryana', '5 '), ('Himachal Pradesh', '6 '), ('Jammu & Kashmir', '7 '), ('Jharkhand', '34'), ('Karnataka', '8 '), ('Kerala', '9 '), ('Lakshadweep', '32'), ('Madhya Pradesh', '10'), ('Maharashtra', '11'), ('Manipur', '12'), ('Meghalaya', '13'), ('Mizoram', '23'), ('Nagaland', '14'), ('Orissa', '15'), ('Pondicherry', '29'), ('Punjab', '16'), ('Rajasthan', '17'), ('Sikkim', '18'), ('Tamilnadu', '19'), ('Tripura', '20'), ('Uttar Pradesh', '21'), ('Uttaranchal', '35'), ('West Bengal', '24')])
         self.__iterate_states_and_search()
         self._browser.close()
             
@@ -115,21 +117,28 @@ class Scraper(object):
         """Returns the element if found, otherwise retries.
 
         Note that each retry is slower than the previous one.
+
+        If you notice that the scraper is busy retrying and has been doing so
+        for a long time (verify by looking at the log), you can interfere with
+        the driver and navigate to a state where it can resume (e.g. search
+        for the state and letter it's currently on).
         """
         secs = 1
         while True: # Safety measure in case page doesn't load.
             try:
                 return self._browser.find_element_by_id(element_id)
             except NoSuchElementException:
-                if self._browser.title == 'errmsg':
+                if self._browser.title == 'errmsg': # Error page loads.
                     logging.warning("Servers are facing a temporary technical "
-                                    "problem... Backing up and trying again.")
-                    self._browser.back()
+                                    "problem... Stopping crawl")
+                    sys.exit()
+                    #self._browser.back() # Should we back up and try again?
+                    # TODO: a better approach?
                     continue
-                else:
+                else: # Page (probably) not loading.
                     logging.warning("Issue finding Next button. Waiting %s "
                                     "seconds before reloading the page and "
-                                    "retrying.")
+                                    "retrying.", secs)
                     time.sleep(secs)
                     self._browser.refresh()
                     secs = math.ceil(secs * 1.8)
@@ -183,8 +192,8 @@ class Scraper(object):
             logging.info("Scraping state %s", state)
             self._current_state = state
             """
-            if state == 'Tamilnadu': # TODO remove after scraping complete
-                for letter in 'tuvwxyz':
+            if state == 'Goa': # TODO remove after scraping complete
+                for letter in 'ijklmnopqrstuvwxyz':
                     # Reset search, otherwise current search will start from
                     # the page number that the last search finished on.
                     self.__goto_state_search_and_select_state(value)
