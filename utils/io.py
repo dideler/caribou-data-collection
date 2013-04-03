@@ -43,17 +43,17 @@ def dir_exists(dirname):
             if os.path.basename(directory) == 'caribou-data-collection':
                 # E.g. /caribou-data-collection/scraper.py
                 datapath = current_dir
-                os.mkdir(datapath)
+                os.makedirs(datapath)
                 print 'Created', datapath
             elif os.path.basename(directory) in COUNTRIES:
                 # E.g. /caribou-data-collection/country/scraper.py
                 datapath = parent_dir
-                os.mkdir(datapath)
+                os.makedirs(datapath)
                 print 'Created', datapath
             elif os.path.basename(os.path.dirname(directory)) in COUNTRIES:
                 # E.g. /caribou-data-collection/country/region/scraper.py
                 datapath = grandparent_dir
-                os.mkdir(datapath)
+                os.makedirs(datapath)
                 print 'Created', datapath
             else:
                 raise RuntimeError('Directory not created. '
